@@ -1,0 +1,69 @@
+# Build Folders
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.userprefs
+*.vcxproj.user
+*.opendb
+
+# Logs
+*.log
+*.tlog
+
+# Visual Studio-specific files
+.vs/
+.vscode/
+*.csproj.user
+*.csproj.DotSettings
+*.sln.DotSettings
+*.sln.ide
+
+# NuGet Packages
+*.nupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+*.nuget.props
+*.nuget.targets
+
+# Entity Framework Core
+Migrations/
+
+# Temporary Files
+*.tmp
+*.bak
+*.old
+*.swp
+*.swo
+
+# Configuration Files (Optional, for sensitive data)
+appsettings*.json
+secrets.json
+.env
+
+# Rider IDE files (JetBrains Rider, optional)
+.idea/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Windows-specific files
+*.db
+*.lock
+*.pid
+*.seed
+*.svd
+
+# Mac-specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux-specific files
+*~
