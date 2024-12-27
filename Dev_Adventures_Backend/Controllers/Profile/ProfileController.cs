@@ -1,4 +1,5 @@
-﻿using Dev_Models;
+﻿using Dev_Db.Data;
+using Dev_Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,9 +11,9 @@ namespace Dev_Adventures_Backend.Controllers.Profile
     public class ProfileController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
-        private readonly Dev_Db.Data.Dev_DbContext _context;
+        private readonly Dev_DbContext _context;
 
-        public ProfileController(UserManager<User> userManager, Dev_Db.Data.Dev_DbContext context)
+        public ProfileController(UserManager<User> userManager, Dev_DbContext context)
         {
             _userManager = userManager;
             _context = context;
@@ -37,8 +38,6 @@ namespace Dev_Adventures_Backend.Controllers.Profile
                 {
                     return NotFound(new { message = $"User with ID/Email '{id}' not found." });
                 }
-
-                // Return user information
                 return Ok(new
                 {
                     id = user.Id,
@@ -54,14 +53,25 @@ namespace Dev_Adventures_Backend.Controllers.Profile
             }
         }
 
-        [HttpGet("all-ids")]
-        public async Task<IActionResult> GetAllUserIds()
+        [HttpGet("get-all")]
+        public async Task<IActionResult> GetAllUser()
         {
             var users = await _userManager.Users
-                .Select(u => new { u.Id, u.Email, u.Fullname })
+                .Select(u => new
+                {
+                    Id = u.Id.ToString(),
+                    u.Email,
+                    u.Fullname
+                })
                 .ToListAsync();
             return Ok(users);
         }
 
+        public class UserDto
+        {
+            public int Id { get; set; }
+            public string Email { get; set; }
+            public string Fullname { get; set; }
+        }
     }
 }
