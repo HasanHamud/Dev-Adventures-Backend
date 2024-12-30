@@ -22,4 +22,8 @@
     <ProjectReference Include="..\Dev_Db\Dev_Db.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\images\user\" />
+  </ItemGroup>
+
 </Project>

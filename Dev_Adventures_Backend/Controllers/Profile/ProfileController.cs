@@ -19,36 +19,31 @@ namespace Dev_Adventures_Backend.Controllers.Profile
             _context = context;
         }
 
-
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProfileById(string id)
         {
             try
             {
-
-                var user = await _userManager.FindByIdAsync(id);
-
-                if (user == null)
-                {
-
-                    user = await _userManager.FindByEmailAsync(id);
-                }
+                var user = await _userManager.FindByIdAsync(id) ?? await _userManager.FindByEmailAsync(id);
 
                 if (user == null)
                 {
                     return NotFound(new { message = $"User with ID/Email '{id}' not found." });
                 }
-                return Ok(new
+
+                var profileDto = new ProfileDto
                 {
-                    id = user.Id,
-                    fullname = user.Fullname,
-                    email = user.Email,
-                    profileImage = user.ProfileImage ?? "default-profile.png"
-                });
+                    Id = user.Id.ToString(),
+                    Fullname = user.Fullname,
+                    Email = user.Email,
+                    ProfileImage = user.ProfileImage ?? "default-profile.png",
+                    PhoneNumber = user.PhoneNumber
+                };
+
+                return Ok(profileDto);
             }
             catch (Exception ex)
             {
-
                 return StatusCode(500, new { message = "An error occurred while fetching the profile.", error = ex.Message });
             }
         }
@@ -57,21 +52,17 @@ namespace Dev_Adventures_Backend.Controllers.Profile
         public async Task<IActionResult> GetAllUser()
         {
             var users = await _userManager.Users
-                .Select(u => new
+                .Select(u => new ProfileDto
                 {
                     Id = u.Id.ToString(),
-                    u.Email,
-                    u.Fullname
+                    Email = u.Email,
+                    Fullname = u.Fullname,
+                    ProfileImage = u.ProfileImage ?? "default-profile.png",
+                    PhoneNumber = u.PhoneNumber
                 })
                 .ToListAsync();
-            return Ok(users);
-        }
 
-        public class UserDto
-        {
-            public int Id { get; set; }
-            public string Email { get; set; }
-            public string Fullname { get; set; }
+            return Ok(users);
         }
     }
 }

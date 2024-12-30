@@ -1,7 +1,6 @@
 ﻿using Dev_Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 
 namespace Dev_Adventures_Backend.Controllers.Register
 {
@@ -19,10 +18,11 @@ namespace Dev_Adventures_Backend.Controllers.Register
         [HttpPost]
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
+            if (model == null)
+                return BadRequest(new { message = "Invalid request." });
+
             if (!ModelState.IsValid)
-            {
-                return BadRequest(new { message = "Invalid registration request." });
-            }
+                return BadRequest(new { message = "Invalid registration data." });
 
             var existingUser = await _userManager.FindByEmailAsync(model.Email);
             if (existingUser != null)
@@ -32,33 +32,19 @@ namespace Dev_Adventures_Backend.Controllers.Register
 
             var user = new User
             {
-                UserName = model.Email,
                 Fullname = model.Fullname,
-                Email = model.Email
+                Email = model.Email,
+                UserName = model.Email,
+                PhoneNumber = model.PhoneNumber
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
             if (result.Succeeded)
             {
-                return Ok(new { message = "Registration successful.", user = new { user.Id, user.Fullname, user.Email } });
+                return Ok(new { message = "Registration successful." });
             }
 
-            var errorMessages = string.Join(", ", result.Errors.Select(e => e.Description));
-            return BadRequest(new { message = errorMessages });
+            return BadRequest(result.Errors);
         }
-    }
-
-    public class RegisterModel
-    {
-        [Required]
-        public string Fullname { get; set; }
-
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; }
-
-        [Required]
-        [DataType(DataType.Password)]
-        public string Password { get; set; }
     }
 }
