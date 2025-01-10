@@ -26,5 +26,11 @@ namespace Dev_Models
 
         public String ImgURL { get; set; }
 
+        public List<Cart> carts { get; set; }
+
+
+        public List<User> users { get; set; }
+
+        public 
     }
 }

@@ -13,9 +13,23 @@ namespace Dev_Db.Data
 
         }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Course>()
+                .HasMany(s => s.carts) 
+                .WithMany(c => c.courses) 
+                .UsingEntity(j => j.ToTable("CartCourses"));  
+        }
+
+
         public DbSet<User> Users { get; set; }
         
         public DbSet<Course> Courses { get; set; }
+
+        public DbSet<Cart> Carts { get; set; }
+
 
     }
 }
