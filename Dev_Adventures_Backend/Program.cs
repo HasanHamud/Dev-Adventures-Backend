@@ -26,11 +26,12 @@ builder.Services.AddCors(options =>
 // Configure Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpContextAccessor();
 
 // Configure DbContext
 builder.Services.AddDbContext<Dev_DbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
-        b => b.MigrationsAssembly("Dev_Adventures_Backend")));
+   options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+       b => b.MigrationsAssembly("Dev_Adventures_Backend")));
 
 // Configure Identity
 builder.Services.AddIdentity<User, IdentityRole>(options =>
@@ -97,7 +98,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
+app.UseRouting();
 // Use CORS before authentication
 app.UseCors("AllowFrontend");
 

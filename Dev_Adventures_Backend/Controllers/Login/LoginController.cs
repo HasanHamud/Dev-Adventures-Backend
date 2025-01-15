@@ -13,20 +13,10 @@ namespace Dev_Adventures_Backend.Controllers.Login
     public class LoginController : ControllerBase
     {
         private readonly SignInManager<User> _signInManager;
-        private readonly UserManager<User> _userManager;
-        private readonly ILogger<LoginController> _logger;
-        private readonly IConfiguration _configuration;
 
-        public LoginController(
-            SignInManager<User> signInManager,
-            UserManager<User> userManager,
-            ILogger<LoginController> logger,
-            IConfiguration configuration)
+        public LoginController(SignInManager<User> signInManager)
         {
             _signInManager = signInManager;
-            _userManager = userManager;
-            _logger = logger;
-            _configuration = configuration;
         }
 
         [HttpPost]
@@ -37,13 +27,13 @@ namespace Dev_Adventures_Backend.Controllers.Login
                 return BadRequest(new { message = "Invalid login request.", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
             }
 
-            var user = await _signInManager.UserManager.FindByEmailAsync(model.Email);
+            var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
                 return Unauthorized(new { message = "Invalid email or password." });
             }
 
-            var result = await _signInManager.PasswordSignInAsync(user, model.Password, false, false);
+            var result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, false, false);
             if (result.Succeeded)
             {
                 var roles = await _userManager.GetRolesAsync(user);
