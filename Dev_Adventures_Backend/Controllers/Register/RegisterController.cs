@@ -1,7 +1,6 @@
-﻿using Dev_Models;
+﻿using Dev_Models.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Dev_Models;
 
 namespace Dev_Adventures_Backend.Controllers.Register
 {
@@ -37,13 +36,13 @@ namespace Dev_Adventures_Backend.Controllers.Register
                 Email = model.Email,
                 UserName = model.Email,
                 PhoneNumber = model.PhoneNumber
-                
+
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
             if (result.Succeeded)
             {
-                user.userCart = new Dev_Models.Cart(user.Id);
+                user.userCart = new Dev_Models.Models.Cart(user.Id);
                 return Ok(new { message = "Registration successful." });
             }
 

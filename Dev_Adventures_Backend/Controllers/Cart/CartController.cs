@@ -1,10 +1,8 @@
 ﻿using Dev_Db.Data;
-using Dev_Models;
-using Microsoft.AspNetCore.Http;
+using Dev_Models.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.General;
 
 namespace Dev_Adventures_Backend.Controllers.Cart
 {
@@ -20,10 +18,6 @@ namespace Dev_Adventures_Backend.Controllers.Cart
             _userManager = userManager;
         }
 
-
-
-
-
         [Route("Course/{id}")]
         [HttpPost]
         public async Task<IActionResult> AddCourse([FromRoute] int ID)
@@ -32,11 +26,12 @@ namespace Dev_Adventures_Backend.Controllers.Cart
             var course = await _context.Courses.FirstOrDefaultAsync(s => s.Id == ID);
             var userCart = await _context.Carts.FirstOrDefaultAsync(s => s.UserId.Equals(UserID));
 
-            if(course == null) {
-            
-            return NotFound();
+            if (course == null)
+            {
+
+                return NotFound();
             }
-            else if(userCart.courses.Contains(course))
+            else if (userCart.courses.Contains(course))
             {
                 return BadRequest("Course Already in Cart");
             }
@@ -44,11 +39,11 @@ namespace Dev_Adventures_Backend.Controllers.Cart
             {
                 userCart.courses.Add(course);
 
-               await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
 
                 return Ok("Course succesfully added");
             }
-           
+
         }
 
 
@@ -67,7 +62,7 @@ namespace Dev_Adventures_Backend.Controllers.Cart
             }
             else if (!userCart.courses.Contains(course))
             {
-                return BadRequest("Course deoesnt exist in Cart");
+                return BadRequest("Course deoesn't exist in Cart");
             }
             else
             {

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Dev_Models
+﻿namespace Dev_Models.Models
 {
     public class Cart
     {
@@ -15,7 +9,6 @@ namespace Dev_Models
         public decimal totalPrice { get; set; } = 0;
 
         public List<Course> courses { get; set; } = new List<Course>();
-
 
         public Cart()
         {

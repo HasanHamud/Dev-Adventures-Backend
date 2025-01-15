@@ -1,17 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 
-namespace Dev_Models
+namespace Dev_Models.Models
 {
     public class Course
     {
 
-       
+
         public int Id { get; set; }
 
         public string Title { get; set; }
@@ -24,13 +19,13 @@ namespace Dev_Models
         [Column(TypeName = "decimal(3,2)")]
         public decimal Price { get; set; }
 
-        public String ImgURL { get; set; }
+        public string ImgURL { get; set; }
 
         public List<Cart> carts { get; set; }
 
 
         public List<User> users { get; set; }
 
-        public 
+
     }
 }

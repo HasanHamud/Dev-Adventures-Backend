@@ -1,9 +1,6 @@
 ﻿using Dev_Models.DTOs.Courses;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Dev_Models.Models;
+
 
 namespace Dev_Models.Mappers.Courses
 {
@@ -24,7 +21,8 @@ namespace Dev_Models.Mappers.Courses
 
         }
 
-        public static Course toCourseFromCreateDTO(this CreateCourseRequestDTO courseDTO) {
+        public static Course toCourseFromCreateDTO(this CreateCourseRequestDTO courseDTO)
+        {
 
             return new Course
             {

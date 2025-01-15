@@ -1,31 +1,36 @@
 ﻿using Dev_Db.Data;
 using Dev_Models.DTOs.Courses;
 using Dev_Models.Mappers.Courses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 
 namespace Dev_Adventures_Backend.Controllers.Courses
 {
-
     [ApiController]
     [Route("api/[controller]")]
     public class CoursesController : ControllerBase
     {
         private readonly Dev_DbContext _context;
+
         public CoursesController(Dev_DbContext context)
         {
             _context = context;
         }
 
-        [HttpGet]
+        private bool IsAdmin()
+        {
+            var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+            return userRole == "Admin";
+        }
 
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var courses = await _context.Courses.ToListAsync();
-            
             var courseDto = courses.Select(c => c.toCourseDto());
-            return Ok(courses);
+            return Ok(courseDto);
         }
 
         [HttpGet("{id}")]
@@ -34,35 +39,44 @@ namespace Dev_Adventures_Backend.Controllers.Courses
             var course = await _context.Courses.FindAsync(id);
             if (course == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Course not found." });
             }
 
-            return Ok(course);
+            return Ok(course.toCourseDto());
         }
-      
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddCourse([FromBody] CreateCourseRequestDTO coursedto)
         {
+            if (!IsAdmin())
+            {
+                return Forbid("You are not authorized to add courses.");
+            }
+
             var courseModel = coursedto.toCourseFromCreateDTO();
             await _context.Courses.AddAsync(courseModel);
-            await  _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById), new {id = courseModel.Id},courseModel.toCourseDto());
-
+            return CreatedAtAction(nameof(GetById), new { id = courseModel.Id }, courseModel.toCourseDto());
         }
 
-        [HttpPut]
-        [Route("{id}")]
-        public async Task<IActionResult> UpdateCourse([FromRoute] int id , [FromBody] UpdateCourseRequestDTO updateDTO)
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateCourse([FromRoute] int id, [FromBody] UpdateCourseRequestDTO updateDTO)
         {
-            var courseModel = await _context.Courses.FirstOrDefaultAsync(x => x.Id == id);
+            if (!IsAdmin())
+            {
+                return Forbid("You are not authorized to update courses.");
+            }
 
+            var courseModel = await _context.Courses.FirstOrDefaultAsync(x => x.Id == id);
 
             if (courseModel == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Course not found." });
             }
+
             courseModel.Title = updateDTO.Title;
             courseModel.Description = updateDTO.Description;
             courseModel.ImgURL = updateDTO.ImgURL;
@@ -70,35 +84,29 @@ namespace Dev_Adventures_Backend.Controllers.Courses
             courseModel.Price = updateDTO.Price;
             await _context.SaveChangesAsync();
 
-            return Ok(courseModel);
-
-
-
+            return Ok(courseModel.toCourseDto());
         }
 
-        [HttpDelete]
-        [Route("{id}")]
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteCourse([FromRoute] int id)
         {
-            var stockModel = await _context.Courses.FirstOrDefaultAsync(x => x.Id == id);
-
-            if (stockModel == null)
+            if (!IsAdmin())
             {
-                return NotFound();
+                return Forbid("You are not authorized to delete courses.");
             }
 
-            _context.Courses.Remove(stockModel);
+            var courseModel = await _context.Courses.FirstOrDefaultAsync(x => x.Id == id);
 
+            if (courseModel == null)
+            {
+                return NotFound(new { message = "Course not found." });
+            }
+
+            _context.Courses.Remove(courseModel);
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
-
-
-
-
-
-
-
     }
 }

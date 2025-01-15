@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Dev_Models
+namespace Dev_Models.Models
 {
     public class CartCoursescs
     {

@@ -1,4 +1,4 @@
-﻿using Dev_Models;
+﻿using Dev_Models.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -18,17 +18,18 @@ namespace Dev_Db.Data
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Course>()
-                .HasMany(s => s.carts) 
-                .WithMany(c => c.courses) 
-                .UsingEntity(j => j.ToTable("CartCourses"));  
+                .HasMany(s => s.carts)
+                .WithMany(c => c.courses)
+                .UsingEntity(j => j.ToTable("CartCourses"));
         }
 
 
         public DbSet<User> Users { get; set; }
-        
+
         public DbSet<Course> Courses { get; set; }
 
         public DbSet<Cart> Carts { get; set; }
+
 
 
     }
