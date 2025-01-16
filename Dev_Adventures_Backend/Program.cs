@@ -4,35 +4,59 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(AdminController).Assembly);
 
-// Configure CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", builder =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        builder.WithOrigins("http://localhost:5173")
-               .AllowAnyHeader()
-               .AllowAnyMethod()
-               .AllowCredentials();
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
-// Configure Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
 
-// Configure DbContext
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+
+
 builder.Services.AddDbContext<Dev_DbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
         b => b.MigrationsAssembly("Dev_Adventures_Backend")));
 
-// Configure Identity
 builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
@@ -47,24 +71,44 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 
 builder.Services.AddScoped<SignInManager<User>>();
 
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.RequireHttpsMetadata = false;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-        };
-    });
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+        ClockSkew = TimeSpan.Zero,
 
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            Console.WriteLine($"Token received: {token?.Substring(0, Math.Min(token?.Length ?? 0, 50))}...");
+            return Task.CompletedTask;
+        },
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine($"Authentication failed: {context.Exception.GetType().Name}");
+            Console.WriteLine($"Error details: {context.Exception.Message}");
+            return Task.CompletedTask;
+        }
+    };
+});
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -82,13 +126,8 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
-
-
-
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -97,13 +136,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
-// Use CORS before authentication
 app.UseCors("AllowFrontend");
-
-// Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
+
 app.Run();

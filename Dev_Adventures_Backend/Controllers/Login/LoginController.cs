@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 
 namespace Dev_Adventures_Backend.Controllers.Login
 {
@@ -61,14 +62,53 @@ namespace Dev_Adventures_Backend.Controllers.Login
             return Unauthorized(new { message = "Invalid email or password." });
         }
 
+        [HttpGet("debug-token")]
+        public IActionResult DebugToken()
+        {
+            var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+            if (authHeader != null && authHeader.StartsWith("Bearer "))
+            {
+                var token = authHeader.Substring("Bearer ".Length);
+                Console.WriteLine($"Received Token: {token}");
+
+                var handler = new JwtSecurityTokenHandler();
+                if (!handler.CanReadToken(token))
+                {
+                    return BadRequest(new { error = "The token is not in a valid JWT format." });
+                }
+
+                try
+                {
+                    var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
+                    return Ok(new
+                    {
+                        Header = jsonToken.Header,
+                        Claims = jsonToken.Claims.Select(c => new { c.Type, c.Value }),
+                        ValidFrom = jsonToken.ValidFrom,
+                        ValidTo = jsonToken.ValidTo,
+                        Issuer = jsonToken.Issuer,
+                        Audience = jsonToken.Audiences
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(new { error = ex.Message });
+                }
+            }
+
+            return BadRequest(new { error = "No token found" });
+        }
+
+
         private string GenerateJwtToken(User user)
         {
             var claims = new List<Claim>
-           {
-               new Claim(ClaimTypes.Name, user.UserName),
-               new Claim(ClaimTypes.Email, user.Email),
-               new Claim(ClaimTypes.NameIdentifier, user.Id)
-           };
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new Claim(ClaimTypes.NameIdentifier, user.Id)
+    };
 
             var roles = _userManager.GetRolesAsync(user).Result;
             foreach (var role in roles)
@@ -76,17 +116,15 @@ namespace Dev_Adventures_Backend.Controllers.Login
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
-
-            var key = new SymmetricSecurityKey(
-                System.Text.Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddHours(1),
+                notBefore: DateTime.UtcNow,
+                expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: creds
             );
 

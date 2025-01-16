@@ -9,10 +9,12 @@ namespace Dev_Adventures_Backend.Controllers.Register
     public class RegisterController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public RegisterController(UserManager<User> userManager)
+        public RegisterController(UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
+            _roleManager = roleManager;
         }
 
         [HttpPost]
@@ -36,12 +38,23 @@ namespace Dev_Adventures_Backend.Controllers.Register
                 Email = model.Email,
                 UserName = model.Email,
                 PhoneNumber = model.PhoneNumber
-
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
             if (result.Succeeded)
             {
+                var defaultRole = "User";
+                if (!await _roleManager.RoleExistsAsync(defaultRole))
+                {
+                    await _roleManager.CreateAsync(new IdentityRole(defaultRole));
+                }
+
+                var roleResult = await _userManager.AddToRoleAsync(user, defaultRole);
+                if (!roleResult.Succeeded)
+                {
+                    return BadRequest(new { message = "Failed to assign the default role." });
+                }
+
                 user.userCart = new Dev_Models.Models.Cart(user.Id);
                 return Ok(new { message = "Registration successful." });
             }
