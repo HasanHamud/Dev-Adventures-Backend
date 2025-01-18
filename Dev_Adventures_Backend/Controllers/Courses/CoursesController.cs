@@ -46,12 +46,12 @@ namespace Dev_Adventures_Backend.Controllers.Courses
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<IActionResult> AddCourse([FromBody] CreateCourseRequestDTO coursedto)
         {
             if (!IsAdmin())
             {
-                return Forbid("You are not authorized to add courses.");
+                return Unauthorized(new { message = "You are not authorized to add courses." });
             }
 
             var courseModel = coursedto.toCourseFromCreateDTO();
@@ -67,7 +67,7 @@ namespace Dev_Adventures_Backend.Controllers.Courses
         {
             if (!IsAdmin())
             {
-                return Forbid("You are not authorized to update courses.");
+                return Unauthorized(new { message = "You are not authorized to update courses." });
             }
 
             var courseModel = await _context.Courses.FirstOrDefaultAsync(x => x.Id == id);
@@ -93,7 +93,7 @@ namespace Dev_Adventures_Backend.Controllers.Courses
         {
             if (!IsAdmin())
             {
-                return Forbid("You are not authorized to delete courses.");
+                return Unauthorized(new { message = "You are not authorized to delete courses." });
             }
 
             var courseModel = await _context.Courses.FirstOrDefaultAsync(x => x.Id == id);

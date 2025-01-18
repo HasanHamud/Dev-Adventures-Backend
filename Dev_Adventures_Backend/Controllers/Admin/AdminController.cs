@@ -1,11 +1,12 @@
 ﻿using Dev_Models.DTOs.UserDTo;
 using Dev_Models.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-[Authorize(Roles = "Admin")]
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [ApiController]
 [Route("api/[controller]")]
 public class AdminController : ControllerBase
@@ -122,5 +123,17 @@ public class AdminController : ControllerBase
         {
             return StatusCode(500, new { message = "An error occurred while fetching the user.", error = ex.Message });
         }
+    }
+
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [HttpGet("test-auth")]
+    public IActionResult TestAuth()
+    {
+        return Ok(new
+        {
+            Message = "Authorization successful",
+            User = User.Identity.Name,
+            Claims = User.Claims.Select(c => new { c.Type, c.Value })
+        });
     }
 }

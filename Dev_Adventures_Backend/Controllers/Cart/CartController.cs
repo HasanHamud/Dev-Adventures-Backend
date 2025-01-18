@@ -1,57 +1,52 @@
 ﻿using Dev_Db.Data;
-using Dev_Models;
-using Microsoft.AspNetCore.Http;
+using Dev_Models.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Dev_Adventures_Backend.Controllers.Cart
 {
-
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CartController : ControllerBase
     {
         private readonly Dev_DbContext _context;
         private readonly UserManager<User> _userManager;
-        private readonly IHttpContextAccessor _httpContextAccessor;
-
-        public CartController(Dev_DbContext context, UserManager<User> userManager, IHttpContextAccessor httpContextAccessor)
+        public CartController(Dev_DbContext context, UserManager<User> userManager)
         {
             _context = context;
             _userManager = userManager;
-            _httpContextAccessor = httpContextAccessor;
         }
-
-
-
-
 
         [Route("Course/{id}")]
         [HttpPost]
         public async Task<IActionResult> AddCourse([FromRoute] int ID)
         {
-            var UserID = GetCurrentUserId();
+            var UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var course = await _context.Courses.FirstOrDefaultAsync(s => s.Id == ID);
-            var userCart = await _context.Carts.FirstOrDefaultAsync(s => s.UserId.Equals(UserID));
+            var userCart = await _context.Carts.FirstOrDefaultAsync(s => s.UserId.Equals(UserId));
 
-            if(course == null) {
-            
-            return NotFound();
+            if (course == null)
+            {
+
+                return NotFound();
             }
-            else if(userCart.courses.Contains(course))
+            else if (userCart.courses.Contains(course))
             {
                 return BadRequest("Course Already in Cart");
             }
             else
             {
                 userCart.courses.Add(course);
-
-               await _context.SaveChangesAsync();
+                userCart.totalPrice += course.Price;
+                await _context.SaveChangesAsync();
 
                 return Ok("Course succesfully added");
             }
-           
+
         }
 
 
@@ -59,45 +54,57 @@ namespace Dev_Adventures_Backend.Controllers.Cart
         [HttpDelete]
         public async Task<IActionResult> Delete([FromRoute] int ID)
         {
-            var UserID = GetCurrentUserId();
+            var UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var course = await _context.Courses.FirstOrDefaultAsync(s => s.Id == ID);
-            var userCart = await _context.Carts
-                .Include(c => c.courses)
-                .FirstOrDefaultAsync(s => s.UserId.Equals(UserID));
-
-            if (userCart == null)
-            {
-                return NotFound("Cart not found");
-            }
+            var userCart = await _context.Carts.FirstOrDefaultAsync(s => s.UserId.Equals(UserId));
 
             if (course == null)
             {
+
                 return NotFound();
             }
-
-            if (!userCart.courses.Contains(course))
+            else if (!userCart.courses.Contains(course))
             {
-                return BadRequest("Course deoesnt exist in Cart");
+                return BadRequest("Course deoesn't exist in Cart");
+            }
+            else
+            {
+                userCart.courses.Remove(course);
+                userCart.totalPrice -= course.Price;
+                await _context.SaveChangesAsync();
+
+                return Ok("Course succesfully deleted");
             }
 
-            userCart.courses.Remove(course);
-            await _context.SaveChangesAsync();
-            return Ok("Course successfully deleted");
         }
+
 
         [HttpGet]
+
         public async Task<IActionResult> GetCartItems()
         {
-            var UserID = GetCurrentUserId();
-            var userCart = await _context.Carts.FirstOrDefaultAsync(s => s.UserId.Equals(UserID));
+            var UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
+            if (UserId == null) { 
+            
+                return Unauthorized();
+
+            }
+            var userCart = _context.Carts
+                .Include(c => c.courses)
+                .FirstOrDefault(c => c.UserId.Equals(UserId));
             if (userCart == null)
             {
-                return NotFound("Cart not found");
+                return NotFound();
+                       
+            
             }
+            userCart = userCart;
 
-            var courses = userCart.courses.ToArray();
-            return Ok(courses);
+            return Ok(userCart.courses);
+
         }
+
     }
 }
+
