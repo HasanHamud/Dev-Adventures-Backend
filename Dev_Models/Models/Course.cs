@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 
 namespace Dev_Models.Models
@@ -14,18 +15,50 @@ namespace Dev_Models.Models
         public string Description { get; set; }
 
         [Column(TypeName = "decimal(2,1)")]
+        [Range(0, 10)]
         public decimal Rating { get; set; }
 
-        [Column(TypeName = "decimal(3,2)")]
+        [Column(TypeName = "decimal(6,2)")]
+        [Range(0, 9999.99)]
         public decimal Price { get; set; }
 
         public string ImgURL { get; set; }
 
-        public List<Cart> carts { get; set; }
+        [Required]
+        public CourseStatus Status { get; set; }
 
+        [Required]
+        public int Duration { get; set; }
+
+        [Required]
+        public CourseLevel Level { get; set; }
+
+        [Required]
+        public string Language { get; set; }
+
+
+        public DateTime CreatedDate { get; set; }
+        public DateTime UpdatedDate { get; set; }
+
+        public List<Lesson> Lessons { get; set; } = new List<Lesson>();
+
+        public List<Cart> carts { get; set; }
 
         public List<User> users { get; set; }
 
-         
+        public enum CourseStatus
+        {
+            Published,
+            InProgress
+        }
+
+
+        public enum CourseLevel
+        {
+            Beginner,
+            Intermediate,
+            Advanced
+        }
+
     }
 }
