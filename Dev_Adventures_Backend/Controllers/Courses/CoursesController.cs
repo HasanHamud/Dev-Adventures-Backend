@@ -29,8 +29,8 @@ namespace Dev_Adventures_Backend.Controllers.Courses
         public async Task<IActionResult> GetAll()
         {
             var courses = await _context.Courses.ToListAsync();
-            var courseDto = courses.Select(c => c.toCourseDto());
-            return Ok(courseDto);
+            var courseDtos = courses.Select(c => c.ToCourseDto());
+            return Ok(courseDtos);
         }
 
         [HttpGet("{id}")]
@@ -42,11 +42,11 @@ namespace Dev_Adventures_Backend.Controllers.Courses
                 return NotFound(new { message = "Course not found." });
             }
 
-            return Ok(course.toCourseDto());
+            return Ok(course.ToCourseDto());
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddCourse([FromBody] CreateCourseRequestDTO coursedto)
         {
             if (!IsAdmin())
@@ -54,11 +54,11 @@ namespace Dev_Adventures_Backend.Controllers.Courses
                 return Unauthorized(new { message = "You are not authorized to add courses." });
             }
 
-            var courseModel = coursedto.toCourseFromCreateDTO();
+            var courseModel = coursedto.ToCourseFromCreateDTO();
             await _context.Courses.AddAsync(courseModel);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById), new { id = courseModel.Id }, courseModel.toCourseDto());
+            return CreatedAtAction(nameof(GetById), new { id = courseModel.Id }, courseModel.ToCourseDto());
         }
 
         [HttpPut("{id}")]
@@ -77,14 +77,10 @@ namespace Dev_Adventures_Backend.Controllers.Courses
                 return NotFound(new { message = "Course not found." });
             }
 
-            courseModel.Title = updateDTO.Title;
-            courseModel.Description = updateDTO.Description;
-            courseModel.ImgURL = updateDTO.ImgURL;
-            courseModel.Rating = updateDTO.Rating;
-            courseModel.Price = updateDTO.Price;
+            courseModel.UpdateCourseFromDTO(updateDTO);
             await _context.SaveChangesAsync();
 
-            return Ok(courseModel.toCourseDto());
+            return Ok(courseModel.ToCourseDto());
         }
 
         [HttpDelete("{id}")]
