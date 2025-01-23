@@ -11,5 +11,7 @@
         public int Duration { get; set; }
         public string Language { get; set; }
         public string Status { get; set; }
+
+
     }
 }

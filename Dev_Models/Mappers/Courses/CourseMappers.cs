@@ -20,13 +20,15 @@ namespace Dev_Models.Mappers.Courses
                 Language = courseModel.Language,
                 Status = courseModel.Status.ToString(),
                 CreatedDate = courseModel.CreatedDate,
-                UpdatedDate = courseModel.UpdatedDate
+                UpdatedDate = courseModel.UpdatedDate,
+                Requirements = courseModel.Requirements?.Select(r => r.Description).ToList() ?? new List<string>(),
+                LearningObjectives = courseModel.LearningObjectives?.Select(o => o.Description).ToList() ?? new List<string>()
             };
         }
 
         public static Course ToCourseFromCreateDTO(this CreateCourseRequestDTO courseDTO)
         {
-            return new Course
+            var course = new Course
             {
                 Title = courseDTO.Title,
                 Description = courseDTO.Description,
@@ -40,6 +42,7 @@ namespace Dev_Models.Mappers.Courses
                 CreatedDate = DateTime.Now,
                 UpdatedDate = DateTime.Now
             };
+            return course;
         }
 
         public static void UpdateCourseFromDTO(this Course courseModel, UpdateCourseRequestDTO updateDTO)
@@ -54,6 +57,8 @@ namespace Dev_Models.Mappers.Courses
             courseModel.Language = updateDTO.Language;
             courseModel.Status = Enum.Parse<Course.CourseStatus>(updateDTO.Status, true);
             courseModel.UpdatedDate = DateTime.Now;
+
+
         }
     }
 }

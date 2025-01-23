@@ -56,8 +56,9 @@ namespace Dev_Adventures_Backend.Controllers.Cart
         {
             var UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var course = await _context.Courses.FirstOrDefaultAsync(s => s.Id == ID);
-            var userCart = await _context.Carts.FirstOrDefaultAsync(s => s.UserId.Equals(UserId));
-
+            var userCart = await _context.Carts
+                    .Include(c => c.courses)
+                    .FirstOrDefaultAsync(s => s.UserId.Equals(UserId));
             if (course == null)
             {
 
@@ -99,10 +100,38 @@ namespace Dev_Adventures_Backend.Controllers.Cart
 
 
             }
-            userCart = userCart;
+           
 
             return Ok(userCart.courses);
 
+        }
+
+
+
+        [HttpGet("price")]
+        
+           public async Task<IActionResult> GetTotalPrice()
+        {
+            var UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (UserId == null)
+            {
+
+                return Unauthorized();
+
+            }
+            var userCart = _context.Carts
+                .Include(c => c.courses)
+                .FirstOrDefault(c => c.UserId.Equals(UserId));
+            if (userCart == null)
+            {
+                return NotFound();
+
+
+            }
+
+
+            return Ok(userCart.totalPrice);
         }
 
     }

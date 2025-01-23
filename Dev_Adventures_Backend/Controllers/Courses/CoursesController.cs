@@ -36,7 +36,11 @@ namespace Dev_Adventures_Backend.Controllers.Courses
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var course = await _context.Courses.FindAsync(id);
+            var course = await _context.Courses
+                .Include(c => c.LearningObjectives)
+                .Include(c => c.Requirements)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
             if (course == null)
             {
                 return NotFound(new { message = "Course not found." });
@@ -44,6 +48,7 @@ namespace Dev_Adventures_Backend.Controllers.Courses
 
             return Ok(course.ToCourseDto());
         }
+
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
