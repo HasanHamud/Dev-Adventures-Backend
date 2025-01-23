@@ -34,6 +34,18 @@ namespace Dev_Db.Data
                 .HasOne(v => v.Lesson)
                 .WithMany(l => l.Videos)
                 .HasForeignKey(v => v.LessonId);
+
+            // Course-Requirement Relationship
+            modelBuilder.Entity<CourseRequirement>()
+                .HasOne(r => r.Course)
+                .WithMany(c => c.Requirements)
+                .HasForeignKey(r => r.CourseId);
+
+            // Course-LearningObjective Relationship
+            modelBuilder.Entity<CourseLearningObjective>()
+                .HasOne(o => o.Course)
+                .WithMany(c => c.LearningObjectives)
+                .HasForeignKey(o => o.CourseId);
         }
 
 
@@ -47,6 +59,9 @@ namespace Dev_Db.Data
         public DbSet<Video> Videos { get; set; }
 
         public DbSet<Cart> Carts { get; set; }
+
+        public DbSet<CourseRequirement> CourseRequirements { get; set; }
+        public DbSet<CourseLearningObjective> CourseLearningObjectives { get; set; }
 
 
 

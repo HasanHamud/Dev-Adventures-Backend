@@ -81,13 +81,13 @@ namespace Dev_Adventures_Backend.Controllers.Cart
 
 
         [HttpGet]
-
         public async Task<IActionResult> GetCartItems()
         {
             var UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (UserId == null) { 
-            
+            if (UserId == null)
+            {
+
                 return Unauthorized();
 
             }
@@ -97,8 +97,8 @@ namespace Dev_Adventures_Backend.Controllers.Cart
             if (userCart == null)
             {
                 return NotFound();
-                       
-            
+
+
             }
            
 

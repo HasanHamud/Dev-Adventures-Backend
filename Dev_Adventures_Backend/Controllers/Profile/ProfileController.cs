@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Dev_Adventures_Backend.Controllers.Profile
 {
+
     [ApiController]
     [Route("api/[controller]")]
     public class ProfileController : ControllerBase

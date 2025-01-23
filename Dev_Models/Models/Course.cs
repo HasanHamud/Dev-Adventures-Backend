@@ -36,11 +36,14 @@ namespace Dev_Models.Models
         [Required]
         public string Language { get; set; }
 
-
         public DateTime CreatedDate { get; set; }
         public DateTime UpdatedDate { get; set; }
 
         public List<Lesson> Lessons { get; set; } = new List<Lesson>();
+
+        public List<CourseRequirement> Requirements { get; set; } = new List<CourseRequirement>();
+        public List<CourseLearningObjective> LearningObjectives { get; set; } = new List<CourseLearningObjective>();
+
 
         public List<Cart> carts { get; set; }
 
