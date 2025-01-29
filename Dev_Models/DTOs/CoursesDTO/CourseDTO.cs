@@ -18,8 +18,4 @@
         public List<string> Requirements { get; set; } = new List<string>();
         public List<string> LearningObjectives { get; set; } = new List<string>();
     }
-
-
-
-
 }

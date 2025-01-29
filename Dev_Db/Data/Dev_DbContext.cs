@@ -46,6 +46,7 @@ namespace Dev_Db.Data
                 .HasOne(o => o.Course)
                 .WithMany(c => c.LearningObjectives)
                 .HasForeignKey(o => o.CourseId);
+
         }
 
 

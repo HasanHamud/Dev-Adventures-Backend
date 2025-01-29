@@ -1,6 +1,7 @@
 ﻿using Dev_Db.Data;
 using Dev_Models.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dev_API.Controllers
 {
@@ -39,46 +40,55 @@ namespace Dev_API.Controllers
 
             if (course == null) return NotFound("Course not found.");
 
-            return Ok(course.Select(o => o.Description).ToList());
+            return Ok(course.Select(o => new { id = o.Id, description = o.Description }).ToList());
         }
 
 
 
         [HttpPost("{courseId}/requirements")]
-        public IActionResult AddRequirement(int courseId, [FromBody] RequirementDto dto)
+        public async Task<IActionResult> AddRequirement(int courseId, [FromBody] RequirementDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Description))
-                return BadRequest("Description is required.");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var course = _context.Courses.Find(courseId);
-            if (course == null) return NotFound("Course not found.");
+            var course = await _context.Courses.FindAsync(courseId);
+            if (course == null) return NotFound($"Course with ID {courseId} not found.");
 
             var requirement = new CourseRequirement { Description = dto.Description, CourseId = courseId };
             course.Requirements.Add(requirement);
-            _context.SaveChanges();
 
-            return Ok("Requirement added successfully.");
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(
+                nameof(GetRequirements),
+                new { courseId },
+                new { id = requirement.Id, description = requirement.Description }
+            );
         }
+
 
 
 
         [HttpPost("{courseId}/learning-objectives")]
         public IActionResult AddLearningObjective(int courseId, [FromBody] ObjectivesDto dto)
         {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.description))
+                return BadRequest("Description is required.");
+
             var course = _context.Courses.Find(courseId);
             if (course == null) return NotFound("Course not found.");
 
-            var learningObjective = new CourseLearningObjective { Description = dto.description, CourseId = courseId };
+            var learningObjective = new CourseLearningObjective
+            {
+                Description = dto.description,
+                CourseId = courseId
+            };
             course.LearningObjectives.Add(learningObjective);
             _context.SaveChanges();
 
             return Ok("Learning objective added successfully.");
         }
 
-        public class ObjectivesDto
-        {
-            public string description { get; set; }
-        }
+
 
         [HttpDelete("{courseId}/requirements/{requirementId}")]
         public IActionResult DeleteRequirement(int courseId, int requirementId)
@@ -92,40 +102,55 @@ namespace Dev_API.Controllers
             return Ok("Requirement deleted successfully.");
         }
 
+
         [HttpDelete("{courseId}/learning-objectives/{objectiveId}")]
-        public IActionResult DeleteLearningObjective(int courseId, int objectiveId)
+        public async Task<IActionResult> DeleteLearningObjective(int courseId, int objectiveId)
         {
-            var objective = _context.CourseLearningObjectives.FirstOrDefault(o => o.Id == objectiveId && o.CourseId == courseId);
-            if (objective == null) return NotFound("Learning Objective not found.");
+            var objective = _context.CourseLearningObjectives.FirstOrDefault(r => r.Id == objectiveId && r.CourseId == courseId);
+            if (objective == null) return NotFound("Objective not found.");
 
             _context.CourseLearningObjectives.Remove(objective);
             _context.SaveChanges();
 
-            return Ok("Learning objective deleted successfully.");
+            return Ok("Objective deleted successfully.");
         }
+
 
         [HttpPut("{courseId}/requirements/{requirementId}")]
-        public IActionResult UpdateRequirement(int courseId, int requirementId, [FromBody] string description)
+        public async Task<IActionResult> UpdateRequirement(int courseId, int requirementId, [FromBody] string description)
         {
-            var requirement = _context.CourseRequirements.FirstOrDefault(r => r.Id == requirementId && r.CourseId == courseId);
-            if (requirement == null) return NotFound("Requirement not found.");
+            if (string.IsNullOrWhiteSpace(description))
+                return BadRequest("Description is required.");
+
+            var requirement = await _context.CourseRequirements
+                .FirstOrDefaultAsync(r => r.Id == requirementId && r.CourseId == courseId);
+            if (requirement == null) return NotFound($"Requirement with ID {requirementId} not found for course {courseId}.");
 
             requirement.Description = description;
-            _context.SaveChanges();
 
-            return Ok("Requirement updated successfully.");
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Requirement updated successfully." });
         }
 
+
         [HttpPut("{courseId}/learning-objectives/{objectiveId}")]
-        public IActionResult UpdateLearningObjective(int courseId, int objectiveId, [FromBody] string description)
+        public async Task<IActionResult> UpdateLearningObjective(int courseId, int objectiveId, [FromBody] ObjectivesDto dto)
         {
-            var objective = _context.CourseLearningObjectives.FirstOrDefault(o => o.Id == objectiveId && o.CourseId == courseId);
-            if (objective == null) return NotFound("Learning Objective not found.");
+            if (dto == null || string.IsNullOrWhiteSpace(dto.description))
+                return BadRequest("Description is required.");
 
-            objective.Description = description;
-            _context.SaveChanges();
+            var objective = await _context.CourseLearningObjectives
+                .FirstOrDefaultAsync(o => o.Id == objectiveId && o.CourseId == courseId);
 
-            return Ok("Learning objective updated successfully.");
+            if (objective == null)
+                return NotFound($"Learning Objective with ID {objectiveId} not found for Course ID {courseId}.");
+
+            objective.Description = dto.description;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Learning objective updated successfully.", objectiveId, courseId });
         }
     }
 
@@ -133,5 +158,10 @@ namespace Dev_API.Controllers
     public class RequirementDto
     {
         public string Description { get; set; }
+    }
+
+    public class ObjectivesDto
+    {
+        public string description { get; set; }
     }
 }

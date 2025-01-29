@@ -52,23 +52,25 @@ namespace Dev_Adventures_Backend.Controllers.Courses
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> AddCourse([FromBody] CreateCourseRequestDTO coursedto)
+        public async Task<IActionResult> AddCourse([FromForm] CreateCourseRequestDTO courseDTO)
         {
             if (!IsAdmin())
             {
                 return Unauthorized(new { message = "You are not authorized to add courses." });
             }
 
-            var courseModel = coursedto.ToCourseFromCreateDTO();
+            var courseModel = await courseDTO.ToCourseFromCreateDTO();
             await _context.Courses.AddAsync(courseModel);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetById), new { id = courseModel.Id }, courseModel.ToCourseDto());
         }
 
+
+
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateCourse([FromRoute] int id, [FromBody] UpdateCourseRequestDTO updateDTO)
+        public async Task<IActionResult> UpdateCourse([FromRoute] int id, [FromForm] UpdateCourseRequestDTO updateDTO)
         {
             if (!IsAdmin())
             {
@@ -82,11 +84,13 @@ namespace Dev_Adventures_Backend.Controllers.Courses
                 return NotFound(new { message = "Course not found." });
             }
 
-            courseModel.UpdateCourseFromDTO(updateDTO);
+            await courseModel.UpdateCourseFromDTO(updateDTO);
             await _context.SaveChangesAsync();
 
             return Ok(courseModel.ToCourseDto());
         }
+
+
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
