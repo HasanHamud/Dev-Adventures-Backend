@@ -5,4 +5,4 @@ dockerfilePath = "./Dev_Adventures_Backend/Dockerfile"
 [deploy]
 startCommand = "dotnet Dev_Adventures_Backend.dll"
 restartPolicyType = "always"
-healthcheckPath = "/health"
+healthcheckPath = "/health

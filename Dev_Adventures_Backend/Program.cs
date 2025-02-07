@@ -1,6 +1,7 @@
 using Dev_Db.Data;
 using Dev_Models.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
-var port = Environment.GetEnvironmentVariable("Port") ?? "5101";
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5101";
 builder.WebHost.UseUrls($"http://*{port}");
 builder.Services.AddHealthChecks();
 
@@ -150,7 +151,14 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
-app.UseHealthChecks("/health");
+app.UseHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync("{\"status\":\"Healthy\"}");
+    }
+});
 
 if (app.Environment.IsDevelopment())
 {
