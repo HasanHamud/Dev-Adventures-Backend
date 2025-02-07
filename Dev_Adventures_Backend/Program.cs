@@ -150,13 +150,21 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 var app = builder.Build();
-
 app.UseHealthChecks("/health", new HealthCheckOptions
 {
     ResponseWriter = async (context, report) =>
     {
-        context.Response.ContentType = "application/json";
-        await context.Response.WriteAsync("{\"status\":\"Healthy\"}");
+        var response = new
+        {
+            status = report.Status.ToString(),
+            errors = report.Entries.Select(e => new
+            {
+                key = e.Key,
+                value = e.Value.Status.ToString(),
+                error = e.Value.Exception?.Message
+            })
+        };
+        await context.Response.WriteAsJsonAsync(response);
     }
 });
 
