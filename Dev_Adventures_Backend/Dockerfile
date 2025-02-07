@@ -23,4 +23,4 @@ COPY --from=publish /app/publish .
 
 EXPOSE 8080
 
-ENTRYPOINT ["./Dev_Adventures_Backend"]
+ENTRYPOINT ["dotnet", "Dev_Adventures_Backend.dll"]

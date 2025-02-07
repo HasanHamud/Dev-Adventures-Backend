@@ -9,6 +9,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dev_Db", "Dev_Db\Dev_Db.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dev_Models", "Dev_Models\Dev_Models.csproj", "{3026342F-912F-4250-A2AC-A3350A7F2635}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{501FAB85-C961-407E-B5FC-A1289D7AC7BD}"
+	ProjectSection(SolutionItems) = preProject
+		railway.toml = railway.toml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
