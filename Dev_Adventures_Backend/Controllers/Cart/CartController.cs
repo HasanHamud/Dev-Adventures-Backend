@@ -1,6 +1,5 @@
 ﻿using Dev_Db.Data;
 using Dev_Models.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +9,7 @@ namespace Dev_Adventures_Backend.Controllers.Cart
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+
     public class CartController : ControllerBase
     {
         private readonly Dev_DbContext _context;
@@ -27,26 +26,29 @@ namespace Dev_Adventures_Backend.Controllers.Cart
         {
             var UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var course = await _context.Courses.FirstOrDefaultAsync(s => s.Id == ID);
-            var userCart = await _context.Carts.FirstOrDefaultAsync(s => s.UserId.Equals(UserId));
+            var userCart = await _context.Carts.Include(c => c.courses)
+                                               .FirstOrDefaultAsync(s => s.UserId.Equals(UserId));
 
             if (course == null)
             {
-
                 return NotFound();
             }
-            else if (userCart.courses.Contains(course))
+
+            if (userCart == null)
+            {
+                return BadRequest("User cart not found.");
+            }
+
+            if (userCart.courses.Any(c => c.Id == course.Id))
             {
                 return BadRequest("Course Already in Cart");
             }
-            else
-            {
-                userCart.courses.Add(course);
-                userCart.totalPrice += course.Price;
-                await _context.SaveChangesAsync();
 
-                return Ok("Course succesfully added");
-            }
+            userCart.courses.Add(course);
+            userCart.totalPrice += course.Price;
+            await _context.SaveChangesAsync();
 
+            return Ok("Course successfully added");
         }
 
 
@@ -100,7 +102,7 @@ namespace Dev_Adventures_Backend.Controllers.Cart
 
 
             }
-           
+
 
             return Ok(userCart.courses);
 
@@ -109,8 +111,8 @@ namespace Dev_Adventures_Backend.Controllers.Cart
 
 
         [HttpGet("price")]
-        
-           public async Task<IActionResult> GetTotalPrice()
+
+        public async Task<IActionResult> GetTotalPrice()
         {
             var UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 

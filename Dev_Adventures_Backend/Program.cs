@@ -10,6 +10,9 @@ using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+var port = Environment.GetEnvironmentVariable("Port") ?? "5101";
+builder.WebHost.UseUrls($"http://*{port}");
+builder.Services.AddHealthChecks();
 
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(AdminController).Assembly);
@@ -146,6 +149,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 var app = builder.Build();
+
+app.UseHealthChecks("/health");
 
 if (app.Environment.IsDevelopment())
 {

@@ -1,0 +1,8 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "./Dev_Adventures_Backend/Dockerfile"
+
+[deploy]
+startCommand = "./Dev_Adventures_Backend.dll"
+restartPolicyType = "always"
+healthcheckPath = "/health"
