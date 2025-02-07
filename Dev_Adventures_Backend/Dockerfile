@@ -21,6 +21,6 @@ WORKDIR /app
 
 COPY --from=publish /app/publish .
 
-EXPOSE 5101
+EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "Dev_Adventures_Backend.dll"]
