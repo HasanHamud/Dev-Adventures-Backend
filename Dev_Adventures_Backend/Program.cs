@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5101";
-builder.WebHost.UseUrls($"http://*{port}");
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 builder.Services.AddHealthChecks();
 
 builder.Services.AddControllers()
