@@ -1,0 +1,6 @@
+@Dev_Adventures_Backend_HostAddress = http://localhost:5101
+
+GET {{Dev_Adventures_Backend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
