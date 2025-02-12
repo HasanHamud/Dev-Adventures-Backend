@@ -110,11 +110,14 @@ public class AdminController : ControllerBase
                 return NotFound(new { message = $"User with ID '{id}' not found." });
             }
 
+            var roles = await _userManager.GetRolesAsync(user);
+
             var userDto = new UserDTO
             {
                 Id = user.Id,
                 UserName = user.UserName ?? "User Name Not Provided",
                 Email = user.Email,
+                Roles = roles.ToList()
             };
 
             return Ok(userDto);
@@ -124,6 +127,7 @@ public class AdminController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while fetching the user.", error = ex.Message });
         }
     }
+
 
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [HttpGet("test-auth")]

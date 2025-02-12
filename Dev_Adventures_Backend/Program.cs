@@ -13,28 +13,30 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5101";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 builder.Services.AddHealthChecks();
+builder.Services.AddSignalR();
 
-builder.Services.AddControllers()
-    .AddApplicationPart(typeof(AdminController).Assembly);
-
+// ? Add Controllers with JSON options
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     });
 
+// ? Fix CORS Policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://192.168.0.114:5173")
+        policy.WithOrigins("http://localhost:5173")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
 });
 
+// ? Swagger Setup
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -63,12 +65,12 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-
-
+// ? Database Context
 builder.Services.AddDbContext<Dev_DbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
         b => b.MigrationsAssembly("Dev_Adventures_Backend")));
 
+// ? Identity Configuration
 builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
@@ -83,6 +85,7 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 
 builder.Services.AddScoped<SignInManager<User>>();
 
+// ? Authentication & JWT Configuration
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -102,15 +105,16 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
         ClockSkew = TimeSpan.Zero,
-
     };
 
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
         {
-            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-            Console.WriteLine($"Token received: {token?.Substring(0, Math.Min(token?.Length ?? 0, 50))}...");
+            if (context.Request.Query.TryGetValue("access_token", out var token))
+            {
+                context.Token = token;
+            }
             return Task.CompletedTask;
         },
         OnAuthenticationFailed = context =>
@@ -122,6 +126,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// ? Form Options Configuration
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 60000000;
@@ -129,10 +134,7 @@ builder.Services.Configure<FormOptions>(options =>
     options.MultipartHeadersLengthLimit = int.MaxValue;
 });
 
-
-
-
-
+// ? Configure Application Cookie
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/api/Login";
@@ -149,7 +151,10 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
+// ? Build App
 var app = builder.Build();
+
+// ? Health Check Endpoint
 app.UseHealthChecks("/health", new HealthCheckOptions
 {
     ResponseWriter = async (context, report) =>
@@ -168,6 +173,7 @@ app.UseHealthChecks("/health", new HealthCheckOptions
     }
 });
 
+// ? Middleware Order Fix
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -176,9 +182,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseRouting(); // ? Place before Authentication & Authorization
 app.UseCors("AllowFrontend");
-app.UseAuthentication();
-app.UseAuthorization();
+app.UseAuthentication(); // ? Place after Routing
+app.UseAuthorization();  // ? Place after Authentication
 app.MapControllers();
+app.MapHub<ChatHub>("/chathub");
 
 app.Run();
