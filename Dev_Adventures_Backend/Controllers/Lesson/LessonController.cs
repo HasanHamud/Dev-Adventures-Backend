@@ -13,7 +13,7 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
     [Route("api/[controller]")]
     public class LessonController : ControllerBase
     {
-       private readonly Dev_DbContext _context;
+        private readonly Dev_DbContext _context;
 
         public LessonController(Dev_DbContext context)
         {
@@ -53,7 +53,7 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
 
         [HttpGet]
         [Route("Courses/{courseID}")]
-        public async Task<IActionResult> GetAllLessons([FromRoute]int courseID)
+        public async Task<IActionResult> GetAllLessons([FromRoute] int courseID)
         {
             var course = await _context.Courses
                    .Include(c => c.Lessons)  // This loads the lessons
@@ -83,7 +83,7 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
         {
 
             var course = await _context.Courses
-                   .Include(c => c.Lessons)  
+                   .Include(c => c.Lessons)
                    .FirstOrDefaultAsync(c => c.Id == courseID);
             if (course == null)
             {
@@ -92,7 +92,7 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
             }
             var lesson = course.Lessons.FirstOrDefault(l => l.Id == lessonID);
 
-            if(lesson == null)
+            if (lesson == null)
             {
                 return NotFound();
             }
@@ -105,10 +105,11 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
         [HttpDelete]
         [Route("{courseID}/{lessonID}")]
 
-        public async Task<IActionResult> DeleteLesson([FromRoute] int courseID, [FromRoute] int lessonID) {
+        public async Task<IActionResult> DeleteLesson([FromRoute] int courseID, [FromRoute] int lessonID)
+        {
 
             var course = await _context.Courses
-                   .Include(c => c.Lessons)  
+                   .Include(c => c.Lessons)
                    .FirstOrDefaultAsync(c => c.Id == courseID);
             if (course == null)
             {
@@ -123,7 +124,7 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
             }
 
             _context.Lessons.Remove(lesson);
-           await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
             return NoContent();
 
@@ -135,7 +136,7 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
         public async Task<IActionResult> UpdateLesson([FromRoute] int courseID, [FromRoute] int lessonID, [FromBody] UpdateLessonRequestDTO lessondto)
         {
             var course = await _context.Courses
-                   .Include(c => c.Lessons)  
+                   .Include(c => c.Lessons)
                    .FirstOrDefaultAsync(c => c.Id == courseID);
             if (course == null)
             {
@@ -184,8 +185,8 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
             var newVideo = new Video
             {
                 LessonId = lessonID,
-                VideoURL = request.VideoURL,    
-                Title = request.Title           
+                VideoURL = request.VideoURL,
+                Title = request.Title
             };
 
             lesson.Videos.Add(newVideo);
@@ -202,7 +203,7 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
 
         [HttpDelete]
         [Route("{courseID}/{lessonID}/{videoID}")]
-         public async Task<IActionResult> DeleteVideo([FromRoute] int lessonID, [FromRoute] int videoID, [FromRoute] int courseID)
+        public async Task<IActionResult> DeleteVideo([FromRoute] int lessonID, [FromRoute] int videoID, [FromRoute] int courseID)
         {
             var course = await _context.Courses
                .Include(c => c.Lessons)
@@ -220,12 +221,12 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
                 return NotFound("Lesson not found.");
             }
 
-          
+
 
             var video = lesson.Videos.FirstOrDefault(x => x.Id == videoID);
 
 
-            if(video  == null)
+            if (video == null)
             {
                 return NotFound();
             }
