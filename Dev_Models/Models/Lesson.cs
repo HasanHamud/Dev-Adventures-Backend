@@ -24,8 +24,8 @@ namespace Dev_Models.Models
         [ForeignKey("CourseId")]
         public Course Course { get; set; }
         public List<Video> Videos { get; set; } = new List<Video>();
-
-       
+        public Quiz Quiz { get; set; }
+        public bool HasQuiz { get; set; }
 
 
 

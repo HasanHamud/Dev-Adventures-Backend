@@ -47,6 +47,34 @@ namespace Dev_Db.Data
                 .WithMany(c => c.LearningObjectives)
                 .HasForeignKey(o => o.CourseId);
 
+
+            modelBuilder.Entity<Quiz>()
+         .HasOne(q => q.Lesson)
+         .WithOne(l => l.Quiz)
+         .HasForeignKey<Quiz>(q => q.LessonId);
+
+            modelBuilder.Entity<QuizQuestion>()
+                .HasOne(q => q.Quiz)
+                .WithMany(qz => qz.Questions)
+                .HasForeignKey(q => q.QuizId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<QuizAnswer>()
+                .HasOne(a => a.Question)
+                .WithMany(q => q.Answers)
+                .HasForeignKey(a => a.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserQuizResult>()
+                .HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId);
+
+            modelBuilder.Entity<UserQuizResult>()
+                .HasOne(r => r.Quiz)
+                .WithMany()
+                .HasForeignKey(r => r.QuizId);
+
         }
 
 
@@ -63,6 +91,13 @@ namespace Dev_Db.Data
 
         public DbSet<CourseRequirement> CourseRequirements { get; set; }
         public DbSet<CourseLearningObjective> CourseLearningObjectives { get; set; }
+        public DbSet<Quiz> Quizzes { get; set; }
+        public DbSet<QuizQuestion> QuizQuestions { get; set; }
+        public DbSet<QuizAnswer> QuizAnswers { get; set; }
+        public DbSet<UserQuizResult> UserQuizResults { get; set; }
+
+
+
 
 
 

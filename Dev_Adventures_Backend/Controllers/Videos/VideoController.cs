@@ -5,7 +5,7 @@ namespace Dev_Adventures_Backend.Controllers.Videos
 
     [ApiController]
     [Route("api/[controller]")]
-    public class VideoController : Controller
+    public class VideoController : ControllerBase
     {
 
         private readonly IWebHostEnvironment _hostingEnvironment;
