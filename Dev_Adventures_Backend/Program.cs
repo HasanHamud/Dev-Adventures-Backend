@@ -17,7 +17,6 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 builder.Services.AddHealthChecks();
 builder.Services.AddSignalR();
 
-// ? Add Controllers with JSON options
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
