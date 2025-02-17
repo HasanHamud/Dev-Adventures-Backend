@@ -117,6 +117,22 @@ namespace Dev_Db.Data
 
                 entity.HasIndex(pc => new { pc.PlanId, pc.CourseId });
             });
+
+            modelBuilder.Entity<UserCourse>()
+           .HasKey(uc => new { uc.UserId, uc.CourseId });
+
+            modelBuilder.Entity<UserCourse>()
+                .HasOne(uc => uc.User)
+                .WithMany(u => u.UserCourses)
+                .HasForeignKey(uc => uc.UserId);
+
+            modelBuilder.Entity<UserCourse>()
+                .HasOne(uc => uc.Course)
+                .WithMany(c => c.UserCourses)
+                .HasForeignKey(uc => uc.CourseId);
+
+
+
         }
 
         public DbSet<Course> Courses { get; set; }
@@ -133,7 +149,7 @@ namespace Dev_Db.Data
         public DbSet<Plan> Plans { get; set; }
         public DbSet<PlansCourses> PlansCourses { get; set; }
         public DbSet<PlansCarts> PlansCarts { get; set; }
-
+        public DbSet<Coupon> Coupons { get; set; }
         public DbSet<UserCourse> UserCourses { get; set; }
     }
 }
