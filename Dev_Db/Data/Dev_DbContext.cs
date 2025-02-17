@@ -44,11 +44,10 @@ namespace Dev_Db.Data
                 .WithMany(c => c.LearningObjectives)
                 .HasForeignKey(o => o.CourseId);
 
-
             modelBuilder.Entity<Quiz>()
-         .HasOne(q => q.Lesson)
-         .WithOne(l => l.Quiz)
-         .HasForeignKey<Quiz>(q => q.LessonId);
+                .HasOne(q => q.Lesson)
+                .WithOne(l => l.Quiz)
+                .HasForeignKey<Quiz>(q => q.LessonId);
 
             modelBuilder.Entity<QuizQuestion>()
                 .HasOne(q => q.Quiz)
@@ -84,6 +83,40 @@ namespace Dev_Db.Data
                 .WithMany()
                 .HasForeignKey(m => m.ReceiverId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Plan-Cart Relationship
+            modelBuilder.Entity<PlansCarts>(entity =>
+            {
+                entity.ToTable("PlansCarts");
+                entity.HasOne(pc => pc.Plan)
+                      .WithMany(p => p.PlansCarts)
+                      .HasForeignKey(pc => pc.PlanId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(pc => pc.Cart)
+                      .WithMany(c => c.PlansCarts)
+                      .HasForeignKey(pc => pc.CartId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(pc => new { pc.PlanId, pc.CartId });
+            });
+
+            // Plan-Course Relationship
+            modelBuilder.Entity<PlansCourses>(entity =>
+            {
+                entity.ToTable("PlansCourses");
+                entity.HasOne(pc => pc.Plan)
+                      .WithMany(p => p.PlansCourses)
+                      .HasForeignKey(pc => pc.PlanId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(pc => pc.Course)
+                      .WithMany(c => c.PlansCourses)
+                      .HasForeignKey(pc => pc.CourseId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(pc => new { pc.PlanId, pc.CourseId });
+            });
         }
 
         public DbSet<Course> Courses { get; set; }
@@ -96,12 +129,9 @@ namespace Dev_Db.Data
         public DbSet<QuizQuestion> QuizQuestions { get; set; }
         public DbSet<QuizAnswer> QuizAnswers { get; set; }
         public DbSet<UserQuizResult> UserQuizResults { get; set; }
-
-
-
-
-
-
         public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<Plan> Plans { get; set; }
+        public DbSet<PlansCourses> PlansCourses { get; set; }
+        public DbSet<PlansCarts> PlansCarts { get; set; }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Dev_Db.Data;
+using Dev_Models.Models;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +32,10 @@ namespace Dev_Adventures_Backend.Controllers.Cart
 
             var userCart = await _context.Carts
                 .Include(c => c.courses)
+                .Include(c => c.PlansCarts)
+                    .ThenInclude(pc => pc.Plan)
+                        .ThenInclude(p => p.PlansCourses)
+                            .ThenInclude(pc => pc.Course)
                 .FirstOrDefaultAsync(c => c.UserId == userId);
 
             if (userCart == null)
@@ -38,7 +43,19 @@ namespace Dev_Adventures_Backend.Controllers.Cart
                 return NotFound("Cart not found for this user.");
             }
 
-            return Ok(userCart.courses);
+            var cartContent = new
+            {
+                Courses = userCart.courses,
+                Plans = userCart.PlansCarts?.Select(pc => new
+                {
+                    Plan = pc.Plan,
+                    AppliedPrice = pc.AppliedPrice,
+                    DateAdded = pc.DateAdded
+                }),
+                TotalPrice = userCart.totalPrice
+            };
+
+            return Ok(cartContent);
         }
 
         [HttpGet("price")]
@@ -111,5 +128,94 @@ namespace Dev_Adventures_Backend.Controllers.Cart
 
             return Ok("Course successfully removed from cart");
         }
+
+        [HttpPost("Plan/{id}")]
+        public async Task<IActionResult> AddPlan([FromRoute] int id)
+        {
+            try
+            {
+                string userId = GetUserId();
+                if (userId == null) return Unauthorized("User not authenticated");
+
+                var plan = await _context.Plans
+                    .Include(p => p.PlansCourses)
+                        .ThenInclude(pc => pc.Course)
+                    .FirstOrDefaultAsync(p => p.Id == id);
+
+                if (plan == null) return NotFound("Plan not found");
+
+                var userCart = await _context.Carts
+                    .Include(c => c.courses)
+                    .Include(c => c.PlansCarts)
+                    .FirstOrDefaultAsync(c => c.UserId == userId);
+
+                if (userCart == null)
+                {
+                    userCart = new Dev_Models.Models.Cart { UserId = userId };
+                    _context.Carts.Add(userCart);
+                }
+
+                if (userCart.PlansCarts?.Any(pc => pc.PlanId == plan.Id) == true)
+                {
+                    return BadRequest("Plan already in cart");
+                }
+
+                var planCart = new PlansCarts
+                {
+                    Plan = plan,
+                    Cart = userCart,
+                    AppliedPrice = plan.totalPrice,
+                    DateAdded = DateTime.UtcNow
+                };
+
+                if (userCart.PlansCarts == null)
+                {
+                    userCart.PlansCarts = new List<PlansCarts>();
+                }
+
+                userCart.PlansCarts.Add(planCart);
+                userCart.totalPrice += plan.totalPrice;
+
+                await _context.SaveChangesAsync();
+                return Ok("Plan successfully added to cart");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [HttpDelete("Plan/{id}")]
+        public async Task<IActionResult> DeletePlan([FromRoute] int id)
+        {
+            try
+            {
+                string userId = GetUserId();
+                if (userId == null) return Unauthorized("User not authenticated");
+
+                var userCart = await _context.Carts
+                    .Include(c => c.PlansCarts)
+                        .ThenInclude(pc => pc.Plan)
+                    .FirstOrDefaultAsync(c => c.UserId == userId);
+
+                if (userCart == null) return NotFound("Cart not found");
+
+                var planCart = userCart.PlansCarts?.FirstOrDefault(pc => pc.PlanId == id);
+                if (planCart == null) return BadRequest("Plan not found in cart");
+
+                userCart.totalPrice -= planCart.AppliedPrice;
+                userCart.PlansCarts.Remove(planCart);
+
+                await _context.SaveChangesAsync();
+                return Ok("Plan successfully removed from cart");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+
+
     }
 }

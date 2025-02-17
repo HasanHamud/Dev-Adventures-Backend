@@ -34,6 +34,7 @@
 	<ItemGroup>
 		<Folder Include="Migrations\" />
 		<Folder Include="wwwroot\images\courses\" />
+		<Folder Include="wwwroot\images\PFP\" />
 		<Folder Include="wwwroot\images\user\" />
 		<Folder Include="wwwroot\videos\" />
 	</ItemGroup>

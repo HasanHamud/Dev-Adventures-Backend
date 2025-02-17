@@ -143,7 +143,70 @@ namespace Dev_Adventures_Backend.Controllers.Questions
             await _context.SaveChangesAsync();
             return NoContent();
         }
+
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<QuizDTO>> UpdateQuiz(int id, [FromBody] QuizDTO quizDto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (id != quizDto.Id)
+                return BadRequest("Quiz ID mismatch");
+
+            try
+            {
+                var existingQuiz = await _context.Quizzes
+                    .Include(q => q.Questions)
+                    .ThenInclude(q => q.Answers)
+                    .FirstOrDefaultAsync(q => q.Id == id);
+
+                if (existingQuiz == null)
+                    return NotFound($"Quiz with ID {id} not found");
+
+                existingQuiz.Title = quizDto.Title;
+                existingQuiz.LessonId = quizDto.LessonId;
+
+                _context.QuizAnswers.RemoveRange(
+                    existingQuiz.Questions.SelectMany(q => q.Answers));
+                _context.QuizQuestions.RemoveRange(existingQuiz.Questions);
+
+                existingQuiz.Questions = quizDto.Questions.Select(q => new QuizQuestion
+                {
+                    Text = q.Text,
+                    Answers = q.Answers.Select(a => new QuizAnswer
+                    {
+                        Text = a.Text,
+                        IsCorrect = a.IsCorrect ?? false
+                    }).ToList()
+                }).ToList();
+
+                await _context.SaveChangesAsync();
+
+                return await GetQuizByLesson(existingQuiz.LessonId);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await QuizExists(id))
+                    return NotFound();
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Log the exception here
+                return StatusCode(500, "An error occurred while updating the quiz");
+            }
+        }
+
+        private async Task<bool> QuizExists(int id)
+        {
+            return await _context.Quizzes.AnyAsync(q => q.Id == id);
+        }
+
     }
+
+
+
 
 
 }
