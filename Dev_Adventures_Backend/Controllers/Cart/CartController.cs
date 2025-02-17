@@ -31,6 +31,10 @@ namespace Dev_Adventures_Backend.Controllers.Cart
 
             var userCart = await _context.Carts
                 .Include(c => c.courses)
+                .Include(c => c.PlansCarts)
+                    .ThenInclude(pc => pc.Plan)
+                        .ThenInclude(p => p.PlansCourses)
+                            .ThenInclude(pc => pc.Course)
                 .FirstOrDefaultAsync(c => c.UserId == userId);
 
             if (userCart == null)
@@ -38,7 +42,19 @@ namespace Dev_Adventures_Backend.Controllers.Cart
                 return NotFound("Cart not found for this user.");
             }
 
-            return Ok(userCart.courses);
+            var cartContent = new
+            {
+                Courses = userCart.courses,
+                Plans = userCart.PlansCarts?.Select(pc => new
+                {
+                    Plan = pc.Plan,
+                    AppliedPrice = pc.AppliedPrice,
+                    DateAdded = pc.DateAdded
+                }),
+                TotalPrice = userCart.totalPrice
+            };
+
+            return Ok(cartContent);
         }
 
         [HttpGet("price")]
@@ -185,5 +201,6 @@ namespace Dev_Adventures_Backend.Controllers.Cart
 
             return Ok(new { isEnrolled = true });
         }
+
     }
 }

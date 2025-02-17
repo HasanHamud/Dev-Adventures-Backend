@@ -128,5 +128,6 @@ namespace Dev_Adventures_Backend.Controllers.Courses
 
             return NoContent();
         }
+
     }
 }

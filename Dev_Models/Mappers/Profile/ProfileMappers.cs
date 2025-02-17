@@ -4,13 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Dev_Models.Models
+namespace Dev_Models.Mappers.Profile
 {
-    public class Question
+    public class ProfileMappers
     {
-        public int Id { get; set; }
-
-
-        public int Grade { get; set; }
     }
 }

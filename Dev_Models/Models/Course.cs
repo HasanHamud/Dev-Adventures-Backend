@@ -1,16 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
 
 namespace Dev_Models.Models
 {
     public class Course
     {
 
+
+
         public int Id { get; set; }
-
         public string Title { get; set; }
-
         public string Description { get; set; }
 
         [Column(TypeName = "decimal(2,1)")]
@@ -39,15 +40,13 @@ namespace Dev_Models.Models
         public DateTime UpdatedDate { get; set; }
 
         public List<Lesson> Lessons { get; set; } = new List<Lesson>();
-
         public List<CourseRequirement> Requirements { get; set; } = new List<CourseRequirement>();
         public List<CourseLearningObjective> LearningObjectives { get; set; } = new List<CourseLearningObjective>();
         public List<UserCourse> UserCourses { get; set; }
 
-
+        // Updated relationships
         public List<Cart> carts { get; set; }
-
-        public List<User> users { get; set; }
+        public List<PlansCourses> PlansCourses { get; set; } = new List<PlansCourses>();
 
         public enum CourseStatus
         {
@@ -55,13 +54,11 @@ namespace Dev_Models.Models
             InProgress
         }
 
-
         public enum CourseLevel
         {
             Beginner,
             Intermediate,
             Advanced
         }
-
     }
 }

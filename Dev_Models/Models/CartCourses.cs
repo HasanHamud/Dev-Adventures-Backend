@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Dev_Models.Models
 {
-    public class CartCoursescs
+    public class CartCourses
     {
         public int CourseId { get; set; }
         public Course Course { get; set; }
