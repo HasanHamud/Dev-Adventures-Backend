@@ -6,7 +6,6 @@ namespace Dev_Models.Models
 {
     public class Lesson
     {
-
         public int Id { get; set; }
 
         [Required]
@@ -24,10 +23,5 @@ namespace Dev_Models.Models
         [ForeignKey("CourseId")]
         public Course Course { get; set; }
         public List<Video> Videos { get; set; } = new List<Video>();
-
-
-
-
-
     }
 }

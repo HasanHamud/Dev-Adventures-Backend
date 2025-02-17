@@ -90,6 +90,21 @@ namespace Dev_Adventures_Backend.Controllers.Courses
             return Ok(courseModel.ToCourseDto());
         }
 
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchCourses([FromQuery] string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return BadRequest(new { message = "Search query cannot be empty." });
+            }
+
+            var courses = await _context.Courses
+                .Where(c => c.Title.Contains(query) || c.Description.Contains(query))
+                .Select(c => new { c.Id, c.Title })
+                .ToListAsync();
+
+            return Ok(courses);
+        }
 
 
         [HttpDelete("{id}")]

@@ -14,5 +14,7 @@ namespace Dev_Models.Models
         public Cart userCart { get; set; }
 
         public List<Course> courses { get; set; }
+
+        public List<UserCourse> UserCourses { get; set; }
     }
 }

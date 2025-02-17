@@ -111,5 +111,79 @@ namespace Dev_Adventures_Backend.Controllers.Cart
 
             return Ok("Course successfully removed from cart");
         }
+
+        [HttpPost("checkout")]
+        public async Task<IActionResult> Checkout()
+        {
+            string userId = GetUserId();
+            if (userId == null) return Unauthorized("User not authenticated");
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var userCart = await _context.Carts
+                    .Include(c => c.courses)
+                    .FirstOrDefaultAsync(c => c.UserId == userId);
+
+                if (userCart == null || !userCart.courses.Any())
+                    return BadRequest("Cart is empty");
+
+                var now = DateTime.UtcNow;
+                var userCourses = userCart.courses.Select(course => new UserCourse
+                {
+                    UserId = userId,
+                    CourseId = course.Id,
+                    EnrollmentDate = now,
+                    Progress = 0,
+                    CompletionDate = null
+                }).ToList();
+
+                var existingEnrollments = await _context.UserCourses
+                    .Where(uc => uc.UserId == userId &&
+                           userCart.courses.Select(c => c.Id).Contains(uc.CourseId))
+                    .ToListAsync();
+
+                if (existingEnrollments.Any())
+                {
+                    var duplicateCourses = existingEnrollments
+                        .Select(e => userCart.courses.First(c => c.Id == e.CourseId).Title)
+                        .ToList();
+
+                    return BadRequest($"Already enrolled in: {string.Join(", ", duplicateCourses)}");
+                }
+
+                await _context.UserCourses.AddRangeAsync(userCourses);
+
+                userCart.courses.Clear();
+                userCart.totalPrice = 0;
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok("Enrollment successful");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, $"Checkout failed: {ex.Message}");
+            }
+        }
+
+        [HttpGet("isEnrolled/{id}")]
+        public async Task<IActionResult> IsEnrolled([FromRoute] int id)
+        {
+            string userId = GetUserId();
+            if (userId == null) return Unauthorized("User not authenticated");
+
+            var enrollment = await _context.UserCourses
+                .FirstOrDefaultAsync(uc => uc.UserId == userId && uc.CourseId == id);
+
+            if (enrollment == null)
+            {
+                return Ok(new { isEnrolled = false });
+            }
+
+            return Ok(new { isEnrolled = true });
+        }
     }
 }

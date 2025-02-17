@@ -56,6 +56,19 @@ namespace Dev_Db.Data
                 .WithMany()
                 .HasForeignKey(m => m.ReceiverId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<UserCourse>()
+            .HasKey(uc => new { uc.UserId, uc.CourseId });
+
+            modelBuilder.Entity<UserCourse>()
+                .HasOne(uc => uc.User)
+                .WithMany(u => u.UserCourses)
+                .HasForeignKey(uc => uc.UserId);
+
+            modelBuilder.Entity<UserCourse>()
+                .HasOne(uc => uc.Course)
+                .WithMany(c => c.UserCourses)
+                .HasForeignKey(uc => uc.CourseId);
         }
 
         public DbSet<Course> Courses { get; set; }
@@ -65,5 +78,8 @@ namespace Dev_Db.Data
         public DbSet<CourseRequirement> CourseRequirements { get; set; }
         public DbSet<CourseLearningObjective> CourseLearningObjectives { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<UserCourse> UserCourses { get; set; }
+
+        public DbSet<Coupon> Coupons { get; set; }
     }
 }

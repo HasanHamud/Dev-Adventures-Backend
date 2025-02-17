@@ -7,7 +7,6 @@ namespace Dev_Models.Models
     public class Course
     {
 
-
         public int Id { get; set; }
 
         public string Title { get; set; }
@@ -19,7 +18,7 @@ namespace Dev_Models.Models
         public decimal Rating { get; set; }
 
         [Column(TypeName = "decimal(6,2)")]
-        [Range(0, 9999.99)]
+        [Range(-1, 9999.99)]
         public decimal Price { get; set; }
 
         public string ImgURL { get; set; }
@@ -43,6 +42,7 @@ namespace Dev_Models.Models
 
         public List<CourseRequirement> Requirements { get; set; } = new List<CourseRequirement>();
         public List<CourseLearningObjective> LearningObjectives { get; set; } = new List<CourseLearningObjective>();
+        public List<UserCourse> UserCourses { get; set; }
 
 
         public List<Cart> carts { get; set; }

@@ -56,7 +56,7 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
         public async Task<IActionResult> GetAllLessons([FromRoute] int courseID)
         {
             var course = await _context.Courses
-                   .Include(c => c.Lessons)  // This loads the lessons
+                   .Include(c => c.Lessons)
                    .FirstOrDefaultAsync(c => c.Id == courseID);
             if (course == null)
             {
@@ -78,29 +78,20 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
 
         [HttpGet]
         [Route("courses/{courseID}/lesson/{lessonID}")]
-
         public async Task<IActionResult> GetLessonById([FromRoute] int courseID, [FromRoute] int lessonID)
         {
-
-            var course = await _context.Courses
-                   .Include(c => c.Lessons)
-                   .FirstOrDefaultAsync(c => c.Id == courseID);
-            if (course == null)
-            {
-
-                return NotFound();
-            }
-            var lesson = course.Lessons.FirstOrDefault(l => l.Id == lessonID);
+            var lesson = await _context.Lessons
+                .Where(l => l.CourseId == courseID && l.Id == lessonID)
+                .FirstOrDefaultAsync();
 
             if (lesson == null)
             {
-                return NotFound();
+                return NotFound("Lesson not found.");
             }
 
             return Ok(lesson);
-
-
         }
+
 
         [HttpDelete]
         [Route("{courseID}/{lessonID}")]
@@ -332,8 +323,6 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
 
             return Ok(video);
         }
-
-
 
     }
 }
