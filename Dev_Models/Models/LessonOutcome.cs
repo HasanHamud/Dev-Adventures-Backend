@@ -3,24 +3,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Dev_Models.Models
 {
-    public class Video
+    public class LearningOutcome
     {
-
         public int Id { get; set; }
-
         [Required]
-        public string Title { get; set; }
-
-        [Required]
-        public string VideoURL { get; set; }
-
-        [Required]
-        public int Length { get; set; }
-        [Required]
+        public string Description { get; set; }
         public int LessonId { get; set; }
-
         [ForeignKey("LessonId")]
         public Lesson Lesson { get; set; }
-
     }
 }

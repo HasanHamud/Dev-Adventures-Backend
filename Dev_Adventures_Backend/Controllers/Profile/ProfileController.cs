@@ -1,5 +1,6 @@
 ﻿using Dev_Db.Data;
 using Dev_Models;
+using Dev_Models.Mappers.Profile;
 using Dev_Models.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -108,6 +109,54 @@ namespace Dev_Adventures_Backend.Controllers.Profile
             }
         }
 
+        [HttpPost("{id}/profile-image")]
+        public async Task<IActionResult> UpdateProfileImage(string id, IFormFile profileImage)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(id) ?? await _userManager.FindByEmailAsync(id);
+                if (user == null)
+                {
+                    return NotFound(new { message = $"User with ID/Email '{id}' not found." });
+                }
+
+                var imagePath = await ProfileMappers.SaveProfileImageAsync(profileImage);
+                if (imagePath == null)
+                {
+                    return BadRequest(new { message = "Invalid image file." });
+                }
+
+                if (!string.IsNullOrEmpty(user.ProfileImage) &&
+                    user.ProfileImage != "default-profile.png" &&
+                    System.IO.File.Exists(Path.Combine("wwwroot", user.ProfileImage.TrimStart('/'))))
+                {
+                    System.IO.File.Delete(Path.Combine("wwwroot", user.ProfileImage.TrimStart('/')));
+                }
+
+                user.ProfileImage = imagePath;
+                var result = await _userManager.UpdateAsync(user);
+
+                if (!result.Succeeded)
+                {
+                    return BadRequest(new
+                    {
+                        message = "Failed to update profile image.",
+                        errors = result.Errors.Select(e => e.Description)
+                    });
+                }
+
+                return Ok(new { profileImage = imagePath });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while updating the profile image.", error = ex.Message });
+            }
+        }
+
 
 
 
@@ -127,5 +176,7 @@ namespace Dev_Adventures_Backend.Controllers.Profile
 
             return Ok(users);
         }
+
+
     }
 }

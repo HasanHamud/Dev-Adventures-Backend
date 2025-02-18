@@ -1,7 +1,6 @@
 ﻿using Dev_Db.Data;
 using Dev_Models.DTOs.QuizDTO;
 using Dev_Models.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -106,6 +105,12 @@ namespace Dev_Adventures_Backend.Controllers.Questions
 
             try
             {
+                var lesson = await _context.Lessons.FindAsync(quizDto.LessonId);
+                if (lesson == null)
+                {
+                    return NotFound("Lesson not found.");
+                }
+
                 var quiz = new Quiz
                 {
                     Title = quizDto.Title,
@@ -122,6 +127,10 @@ namespace Dev_Adventures_Backend.Controllers.Questions
                 };
 
                 _context.Quizzes.Add(quiz);
+
+                lesson.HasQuiz = true;
+                _context.Lessons.Update(lesson);
+
                 await _context.SaveChangesAsync();
 
                 return CreatedAtAction(nameof(GetQuizByLesson), new { lessonId = quiz.LessonId }, quiz);
@@ -140,9 +149,22 @@ namespace Dev_Adventures_Backend.Controllers.Questions
                 return NotFound();
 
             _context.Quizzes.Remove(quiz);
+
+            var remainingQuizzes = await _context.Quizzes.AnyAsync(q => q.LessonId == quiz.LessonId);
+            if (!remainingQuizzes)
+            {
+                var lesson = await _context.Lessons.FindAsync(quiz.LessonId);
+                if (lesson != null)
+                {
+                    lesson.HasQuiz = false;
+                    _context.Lessons.Update(lesson);
+                }
+            }
+
             await _context.SaveChangesAsync();
             return NoContent();
         }
+
 
 
         [HttpPut("{id}")]
@@ -193,7 +215,6 @@ namespace Dev_Adventures_Backend.Controllers.Questions
             }
             catch (Exception ex)
             {
-                // Log the exception here
                 return StatusCode(500, "An error occurred while updating the quiz");
             }
         }
@@ -204,10 +225,5 @@ namespace Dev_Adventures_Backend.Controllers.Questions
         }
 
     }
-
-
-
-
-
 }
 

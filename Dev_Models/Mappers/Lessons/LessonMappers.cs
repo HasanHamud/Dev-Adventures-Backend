@@ -1,11 +1,5 @@
-﻿using Dev_Models.DTOs.Courses;
-using Dev_Models.DTOs.LessonDTO;
+﻿using Dev_Models.DTOs.LessonDTO;
 using Dev_Models.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Dev_Models.Mappers.Lessons
 {
@@ -19,8 +13,6 @@ namespace Dev_Models.Mappers.Lessons
                 Id = LessonModel.Id,
                 Title = LessonModel.Title,
                 Description = LessonModel.Description,
-                Length = LessonModel.Length,
-              
             };
         }
 
@@ -30,9 +22,6 @@ namespace Dev_Models.Mappers.Lessons
             {
                 Title = LessonModel.Title,
                 Description = LessonModel.Description,
-                Length = LessonModel.Length,
-
-
             };
         }
 
@@ -40,13 +29,7 @@ namespace Dev_Models.Mappers.Lessons
         {
             LessonModel.Title = updateDTO.Title;
             LessonModel.Description = updateDTO.Description;
-            LessonModel.Length = updateDTO.Length;
-          
         }
     }
-
-
-
-
 }
 

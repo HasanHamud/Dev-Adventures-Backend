@@ -152,7 +152,30 @@ namespace Dev_API.Controllers
 
             return Ok(new { message = "Learning objective updated successfully.", objectiveId, courseId });
         }
+
+        [HttpGet("{courseId}")]
+        public async Task<IActionResult> GetCourseDetails(int courseId)
+        {
+            var course = await _context.Courses
+                .Where(c => c.Id == courseId)
+                .Select(c => new
+                {
+                    Title = c.Title,
+                    Description = c.Description
+                })
+                .FirstOrDefaultAsync();
+
+            if (course == null)
+            {
+                return NotFound("Course not found.");
+            }
+
+            return Ok(course);
+        }
+
     }
+
+
 
 
     public class RequirementDto

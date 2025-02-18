@@ -123,17 +123,16 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
 
         [HttpPut]
         [Route("{courseID}/{lessonID}")]
-
         public async Task<IActionResult> UpdateLesson([FromRoute] int courseID, [FromRoute] int lessonID, [FromBody] UpdateLessonRequestDTO lessondto)
         {
             var course = await _context.Courses
-                   .Include(c => c.Lessons)
-                   .FirstOrDefaultAsync(c => c.Id == courseID);
+                .Include(c => c.Lessons)
+                .FirstOrDefaultAsync(c => c.Id == courseID);
             if (course == null)
             {
-
                 return NotFound();
             }
+
             var lesson = course.Lessons.FirstOrDefault(l => l.Id == lessonID);
 
             if (lesson == null)
@@ -141,12 +140,16 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
                 return NotFound();
             }
 
-            lesson.UpdateLessonFromDTO(lessondto);
+            lesson.Title = lessondto.Title;
+            lesson.Description = lessondto.Description;
+
             await _context.SaveChangesAsync();
 
-            return Ok(lesson.ToLessonDto());
-
+            return Ok(lesson);
         }
+
+
+
         [HttpPost]
         [Route("{courseID}/{lessonID}")]
         public async Task<IActionResult> AddVideo([FromRoute] int courseID, [FromRoute] int lessonID, [FromBody] AddVideoRequest request)
@@ -167,29 +170,20 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
                 return NotFound("Lesson not found.");
             }
 
-            Console.WriteLine("Existing videos in this lesson:");
-            foreach (var video in lesson.Videos)
-            {
-                Console.WriteLine($"Video ID: {video.Id}, Title: {video.Title}, URL: {video.VideoURL}");
-            }
-
             var newVideo = new Video
             {
                 LessonId = lessonID,
                 VideoURL = request.VideoURL,
-                Title = request.Title
+                Title = request.Title,
+                Length = request.Length
             };
 
             lesson.Videos.Add(newVideo);
-            int result = await _context.SaveChangesAsync();
-            Console.WriteLine($"SaveChangesAsync result: {result}");
-            Console.WriteLine("Videos after adding new video:");
-            foreach (var video in lesson.Videos)
-            {
-                Console.WriteLine($"Video ID: {video.Id}, Title: {video.Title}, URL: {video.VideoURL}");
-            }
+            await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetAllVideos), new { courseID, lessonID, videoId = newVideo.Id }, newVideo);
+            return CreatedAtAction(nameof(GetAllVideos),
+                new { courseID, lessonID, videoId = newVideo.Id },
+                newVideo);
         }
 
         [HttpDelete]
@@ -320,9 +314,7 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
             {
                 return NotFound("Video not found.");
             }
-
             return Ok(video);
         }
-
     }
 }
