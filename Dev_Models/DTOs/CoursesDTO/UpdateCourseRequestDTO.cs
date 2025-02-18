@@ -14,6 +14,8 @@ namespace Dev_Models.DTOs.Courses
         public string Language { get; set; }
         public string Status { get; set; }
 
+        public string previewURL { get; set; }
+
 
     }
 }

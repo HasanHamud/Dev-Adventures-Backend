@@ -22,6 +22,7 @@ namespace Dev_Models.Mappers.Courses
                 Status = courseModel.Status.ToString(),
                 CreatedDate = courseModel.CreatedDate,
                 UpdatedDate = courseModel.UpdatedDate,
+                previewURL = courseModel.previewURL,  // Added previewURL mapping
                 Requirements = courseModel.Requirements?.Select(r => r.Description).ToList() ?? new List<string>(),
                 LearningObjectives = courseModel.LearningObjectives?.Select(o => o.Description).ToList() ?? new List<string>()
             };
@@ -30,7 +31,6 @@ namespace Dev_Models.Mappers.Courses
         public static async Task<Course> ToCourseFromCreateDTO(this CreateCourseRequestDTO courseDTO)
         {
             var imgURL = await SaveImageAsync(courseDTO.ImgURL);
-
             var course = new Course
             {
                 Title = courseDTO.Title,
@@ -42,6 +42,7 @@ namespace Dev_Models.Mappers.Courses
                 Duration = courseDTO.Duration,
                 Language = courseDTO.Language,
                 Status = Enum.Parse<Course.CourseStatus>(courseDTO.Status, true),
+                previewURL = courseDTO.previewURL,  // Added previewURL mapping
                 CreatedDate = DateTime.Now,
                 UpdatedDate = DateTime.Now
             };
@@ -54,7 +55,6 @@ namespace Dev_Models.Mappers.Courses
             {
                 courseModel.ImgURL = await SaveImageAsync(updateDTO.ImgURL);
             }
-
             courseModel.Title = updateDTO.Title;
             courseModel.Description = updateDTO.Description;
             courseModel.Rating = updateDTO.Rating;
@@ -63,6 +63,7 @@ namespace Dev_Models.Mappers.Courses
             courseModel.Duration = updateDTO.Duration;
             courseModel.Language = updateDTO.Language;
             courseModel.Status = Enum.Parse<Course.CourseStatus>(updateDTO.Status, true);
+            courseModel.previewURL = updateDTO.previewURL;  // Added previewURL mapping
             courseModel.UpdatedDate = DateTime.Now;
         }
 

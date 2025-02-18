@@ -140,13 +140,50 @@ namespace Dev_Adventures_Backend.Controllers.Cart
             {
                 var userCart = await _context.Carts
                     .Include(c => c.courses)
+                    .Include(c => c.PlansCarts)
+                        .ThenInclude(pc => pc.Plan)
+                            .ThenInclude(p => p.PlansCourses)
+                                .ThenInclude(pc => pc.Course)
                     .FirstOrDefaultAsync(c => c.UserId == userId);
 
-                if (userCart == null || !userCart.courses.Any())
+                if (userCart == null || (!userCart.courses.Any() && !userCart.PlansCarts.Any()))
                     return BadRequest("Cart is empty");
 
                 var now = DateTime.UtcNow;
-                var userCourses = userCart.courses.Select(course => new UserCourse
+                var coursesToEnroll = new List<Course>();
+
+                // Add individual courses
+                coursesToEnroll.AddRange(userCart.courses);
+
+                // Get all existing enrollments for the user
+                var existingEnrollments = await _context.UserCourses
+                    .Where(uc => uc.UserId == userId)
+                    .Select(uc => uc.CourseId)
+                    .ToListAsync();
+
+                // Process plans and add only non-enrolled courses
+                foreach (var planCart in userCart.PlansCarts)
+                {
+                    var planCourses = planCart.Plan.PlansCourses
+                        .Select(pc => pc.Course)
+                        .Where(course => !existingEnrollments.Contains(course.Id));
+
+                    coursesToEnroll.AddRange(planCourses);
+                }
+
+                // Remove duplicates
+                coursesToEnroll = coursesToEnroll
+                    .DistinctBy(c => c.Id)
+                    .Where(course => !existingEnrollments.Contains(course.Id))
+                    .ToList();
+
+                if (!coursesToEnroll.Any())
+                {
+                    return BadRequest("You are already enrolled in all selected courses.");
+                }
+
+                // Create new enrollments for non-enrolled courses
+                var newEnrollments = coursesToEnroll.Select(course => new UserCourse
                 {
                     UserId = userId,
                     CourseId = course.Id,
@@ -155,29 +192,27 @@ namespace Dev_Adventures_Backend.Controllers.Cart
                     CompletionDate = null
                 }).ToList();
 
-                var existingEnrollments = await _context.UserCourses
-                    .Where(uc => uc.UserId == userId &&
-                           userCart.courses.Select(c => c.Id).Contains(uc.CourseId))
-                    .ToListAsync();
+                await _context.UserCourses.AddRangeAsync(newEnrollments);
 
-                if (existingEnrollments.Any())
-                {
-                    var duplicateCourses = existingEnrollments
-                        .Select(e => userCart.courses.First(c => c.Id == e.CourseId).Title)
-                        .ToList();
-
-                    return BadRequest($"Already enrolled in: {string.Join(", ", duplicateCourses)}");
-                }
-
-                await _context.UserCourses.AddRangeAsync(userCourses);
-
+                // Clear the cart
                 userCart.courses.Clear();
+                userCart.PlansCarts.Clear();
                 userCart.totalPrice = 0;
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return Ok("Enrollment successful");
+                var enrolledCourseCount = newEnrollments.Count;
+                var skippedCourseCount = existingEnrollments.Count(id =>
+                    userCart.courses.Any(c => c.Id == id) ||
+                    userCart.PlansCarts.Any(pc => pc.Plan.PlansCourses.Any(psc => psc.CourseId == id)));
+
+                return Ok(new
+                {
+                    message = "Enrollment successful",
+                    enrolledCourses = enrolledCourseCount,
+                    skippedCourses = skippedCourseCount
+                });
             }
             catch (Exception ex)
             {

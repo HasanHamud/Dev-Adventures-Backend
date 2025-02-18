@@ -17,6 +17,9 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 builder.Services.AddHealthChecks();
 builder.Services.AddSignalR();
 
+// Register HttpClientFactory
+builder.Services.AddHttpClient();
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {

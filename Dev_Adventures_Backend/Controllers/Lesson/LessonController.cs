@@ -5,21 +5,79 @@ using Dev_Models.Mappers.Lessons;
 using Dev_Models.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Net.Http;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Xml;
 
 namespace Dev_Adventures_Backend.Controllers.LessonController
 {
-
     [ApiController]
     [Route("api/[controller]")]
     public class LessonController : ControllerBase
     {
         private readonly Dev_DbContext _context;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly string _youtubeApiKey; // You'll need to set this from configuration
 
-        public LessonController(Dev_DbContext context)
+        public LessonController(Dev_DbContext context, IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
             _context = context;
+            _httpClientFactory = httpClientFactory;
+            _youtubeApiKey = configuration["YouTube:ApiKey"]; // Get API key from configuration
         }
 
+        // Helper method to extract YouTube video ID from URL
+        private string ExtractYouTubeVideoId(string url)
+        {
+            var youtubeIdRegex = new Regex(@"(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})");
+            var match = youtubeIdRegex.Match(url);
+
+            if (match.Success)
+            {
+                return match.Groups[1].Value;
+            }
+
+            return null;
+        }
+
+        // Method to get video duration from YouTube API
+        private async Task<int> GetYouTubeVideoDuration(string videoId)
+        {
+            try
+            {
+                var httpClient = _httpClientFactory.CreateClient();
+                var response = await httpClient.GetAsync($"https://www.googleapis.com/youtube/v3/videos?id={videoId}&part=contentDetails&key={_youtubeApiKey}");
+
+                response.EnsureSuccessStatusCode();
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+                using (JsonDocument doc = JsonDocument.Parse(jsonString))
+                {
+                    if (doc.RootElement.GetProperty("items").GetArrayLength() > 0)
+                    {
+                        var durationString = doc.RootElement.GetProperty("items")[0]
+                                               .GetProperty("contentDetails")
+                                               .GetProperty("duration").GetString();
+
+                        // Parse ISO 8601 duration format
+                        var duration = XmlConvert.ToTimeSpan(durationString);
+
+                        // Return duration in seconds
+                        return (int)duration.TotalSeconds;
+                    }
+                }
+
+                return 0; // Default if duration can't be extracted
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting video duration: {ex.Message}");
+                return 0; // Default if there's an error
+            }
+        }
 
         [HttpPost]
         [Route("courses/{courseId}")]
@@ -30,7 +88,6 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
             {
                 return NotFound($"Course with ID {courseId} not found");
             }
-
 
             var lessonmodel = lessondto.ToLessonFromCreateDTO();
             lessonmodel.CourseId = courseId;
@@ -49,8 +106,6 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
             );
         }
 
-
-
         [HttpGet]
         [Route("Courses/{courseID}")]
         public async Task<IActionResult> GetAllLessons([FromRoute] int courseID)
@@ -60,7 +115,6 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
                    .FirstOrDefaultAsync(c => c.Id == courseID);
             if (course == null)
             {
-
                 return NotFound();
             }
 
@@ -72,9 +126,7 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
             }
 
             return Ok(lessons);
-
         }
-
 
         [HttpGet]
         [Route("courses/{courseID}/lesson/{lessonID}")]
@@ -92,19 +144,15 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
             return Ok(lesson);
         }
 
-
         [HttpDelete]
         [Route("{courseID}/{lessonID}")]
-
         public async Task<IActionResult> DeleteLesson([FromRoute] int courseID, [FromRoute] int lessonID)
         {
-
             var course = await _context.Courses
                    .Include(c => c.Lessons)
                    .FirstOrDefaultAsync(c => c.Id == courseID);
             if (course == null)
             {
-
                 return NotFound();
             }
             var lesson = course.Lessons.FirstOrDefault(l => l.Id == lessonID);
@@ -118,12 +166,10 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
             await _context.SaveChangesAsync();
 
             return NoContent();
-
         }
 
         [HttpPut]
         [Route("{courseID}/{lessonID}")]
-
         public async Task<IActionResult> UpdateLesson([FromRoute] int courseID, [FromRoute] int lessonID, [FromBody] UpdateLessonRequestDTO lessondto)
         {
             var course = await _context.Courses
@@ -131,7 +177,6 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
                    .FirstOrDefaultAsync(c => c.Id == courseID);
             if (course == null)
             {
-
                 return NotFound();
             }
             var lesson = course.Lessons.FirstOrDefault(l => l.Id == lessonID);
@@ -145,8 +190,8 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
             await _context.SaveChangesAsync();
 
             return Ok(lesson.ToLessonDto());
-
         }
+
         [HttpPost]
         [Route("{courseID}/{lessonID}")]
         public async Task<IActionResult> AddVideo([FromRoute] int courseID, [FromRoute] int lessonID, [FromBody] AddVideoRequest request)
@@ -173,20 +218,31 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
                 Console.WriteLine($"Video ID: {video.Id}, Title: {video.Title}, URL: {video.VideoURL}");
             }
 
+            // Extract video length from YouTube URL
+            int videoLength = 0;
+            string videoId = ExtractYouTubeVideoId(request.VideoURL);
+
+            if (videoId != null)
+            {
+                videoLength = await GetYouTubeVideoDuration(videoId);
+            }
+
             var newVideo = new Video
             {
                 LessonId = lessonID,
                 VideoURL = request.VideoURL,
-                Title = request.Title
+                Title = request.Title,
+                Length = videoLength // Set the extracted length
             };
 
             lesson.Videos.Add(newVideo);
             int result = await _context.SaveChangesAsync();
+
             Console.WriteLine($"SaveChangesAsync result: {result}");
             Console.WriteLine("Videos after adding new video:");
             foreach (var video in lesson.Videos)
             {
-                Console.WriteLine($"Video ID: {video.Id}, Title: {video.Title}, URL: {video.VideoURL}");
+                Console.WriteLine($"Video ID: {video.Id}, Title: {video.Title}, URL: {video.VideoURL}, Length: {video.Length} seconds");
             }
 
             return CreatedAtAction(nameof(GetAllVideos), new { courseID, lessonID, videoId = newVideo.Id }, newVideo);
@@ -212,10 +268,7 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
                 return NotFound("Lesson not found.");
             }
 
-
-
             var video = lesson.Videos.FirstOrDefault(x => x.Id == videoID);
-
 
             if (video == null)
             {
@@ -226,14 +279,10 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
             await _context.SaveChangesAsync();
 
             return NoContent();
-
-
-
         }
 
         [HttpPut]
         [Route("{courseID}/{lessonID}/{videoID}")]
-
         public async Task<IActionResult> UpdateVideo([FromRoute] int lessonID, [FromRoute] int videoID, [FromRoute] int courseID, [FromBody] UpdateVideoRequestDTO newVideo)
         {
             var course = await _context.Courses
@@ -254,21 +303,28 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
 
             var video = lesson.Videos.FirstOrDefault(x => x.Id == videoID);
 
-
             if (video == null)
             {
                 return NotFound();
             }
 
+            if (video.VideoURL != newVideo.VideoURL)
+            {
+                string videoId = ExtractYouTubeVideoId(newVideo.VideoURL);
+                if (videoId != null)
+                {
+                    video.Length = await GetYouTubeVideoDuration(videoId);
+                }
+            }
+
             video.Title = newVideo.Title;
             video.VideoURL = newVideo.VideoURL;
+
+            
 
             await _context.SaveChangesAsync();
 
             return NoContent();
-
-
-
         }
 
         [HttpGet]
@@ -323,6 +379,5 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
 
             return Ok(video);
         }
-
     }
 }

@@ -60,5 +60,7 @@ namespace Dev_Models.Models
             Intermediate,
             Advanced
         }
+
+        public string? previewURL { get; set; }
     }
 }
