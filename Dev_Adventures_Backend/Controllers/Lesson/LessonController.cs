@@ -173,12 +173,13 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
         public async Task<IActionResult> UpdateLesson([FromRoute] int courseID, [FromRoute] int lessonID, [FromBody] UpdateLessonRequestDTO lessondto)
         {
             var course = await _context.Courses
-                   .Include(c => c.Lessons)
-                   .FirstOrDefaultAsync(c => c.Id == courseID);
+                .Include(c => c.Lessons)
+                .FirstOrDefaultAsync(c => c.Id == courseID);
             if (course == null)
             {
                 return NotFound();
             }
+
             var lesson = course.Lessons.FirstOrDefault(l => l.Id == lessonID);
 
             if (lesson == null)
@@ -186,7 +187,9 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
                 return NotFound();
             }
 
-            lesson.UpdateLessonFromDTO(lessondto);
+            lesson.Title = lessondto.Title;
+            lesson.Description = lessondto.Description;
+
             await _context.SaveChangesAsync();
 
             return Ok(lesson.ToLessonDto());
@@ -245,7 +248,9 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
                 Console.WriteLine($"Video ID: {video.Id}, Title: {video.Title}, URL: {video.VideoURL}, Length: {video.Length} seconds");
             }
 
-            return CreatedAtAction(nameof(GetAllVideos), new { courseID, lessonID, videoId = newVideo.Id }, newVideo);
+            return CreatedAtAction(nameof(GetAllVideos),
+                new { courseID, lessonID, videoId = newVideo.Id },
+                newVideo);
         }
 
         [HttpDelete]
@@ -376,7 +381,6 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
             {
                 return NotFound("Video not found.");
             }
-
             return Ok(video);
         }
     }

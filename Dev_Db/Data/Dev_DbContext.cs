@@ -151,5 +151,6 @@ namespace Dev_Db.Data
         public DbSet<PlansCarts> PlansCarts { get; set; }
         public DbSet<Coupon> Coupons { get; set; }
         public DbSet<UserCourse> UserCourses { get; set; }
+        public DbSet<LearningOutcome> LearningOutcomes { get; set; }
     }
 }

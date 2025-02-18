@@ -7,6 +7,6 @@
         public string Description { get; set; }
         public int Length { get; set; }
         public int CourseId { get; set; }
-
+        public List<string> LearningOutcomes { get; set; }
     }
 }
