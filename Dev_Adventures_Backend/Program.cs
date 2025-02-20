@@ -7,12 +7,16 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using QuestPDF.Infrastructure;
 using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5101";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
+// Set the QuestPDF license to Community for free usage during development
+QuestPDF.Settings.License = LicenseType.Community;
 
 builder.Services.AddHealthChecks();
 builder.Services.AddSignalR();
@@ -174,7 +178,6 @@ app.UseHealthChecks("/health", new HealthCheckOptions
     }
 });
 
-// ? Middleware Order Fix
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

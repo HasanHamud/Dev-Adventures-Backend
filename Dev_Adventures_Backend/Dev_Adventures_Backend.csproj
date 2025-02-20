@@ -24,6 +24,7 @@
 		<PackageReference Include="Microsoft.Extensions.Features" Version="9.0.1" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
+		<PackageReference Include="QuestPDF" Version="2025.1.2" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
 	</ItemGroup>
 
@@ -34,6 +35,7 @@
 	<ItemGroup>
 		<Folder Include="Migrations\" />
 		<Folder Include="wwwroot\images\courses\" />
+		<Folder Include="wwwroot\images\certificates\" />
 		<Folder Include="wwwroot\images\PFP\" />
 		<Folder Include="wwwroot\images\user\" />
 		<Folder Include="wwwroot\videos\" />

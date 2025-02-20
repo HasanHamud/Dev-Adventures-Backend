@@ -5,11 +5,9 @@ using Dev_Models.Mappers.Lessons;
 using Dev_Models.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Net.Http;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace Dev_Adventures_Backend.Controllers.LessonController
@@ -20,16 +18,15 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
     {
         private readonly Dev_DbContext _context;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly string _youtubeApiKey; // You'll need to set this from configuration
+        private readonly string _youtubeApiKey;
 
         public LessonController(Dev_DbContext context, IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
             _context = context;
             _httpClientFactory = httpClientFactory;
-            _youtubeApiKey = configuration["YouTube:ApiKey"]; // Get API key from configuration
+            _youtubeApiKey = configuration["YouTube:ApiKey"];
         }
 
-        // Helper method to extract YouTube video ID from URL
         private string ExtractYouTubeVideoId(string url)
         {
             var youtubeIdRegex = new Regex(@"(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})");
@@ -43,7 +40,6 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
             return null;
         }
 
-        // Method to get video duration from YouTube API
         private async Task<int> GetYouTubeVideoDuration(string videoId)
         {
             try
@@ -62,21 +58,42 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
                                                .GetProperty("contentDetails")
                                                .GetProperty("duration").GetString();
 
-                        // Parse ISO 8601 duration format
                         var duration = XmlConvert.ToTimeSpan(durationString);
-
-                        // Return duration in seconds
                         return (int)duration.TotalSeconds;
                     }
                 }
 
-                return 0; // Default if duration can't be extracted
+                return 0;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error getting video duration: {ex.Message}");
-                return 0; // Default if there's an error
+                return 0;
             }
+        }
+
+        [HttpPost("{lessonId}/complete")]
+        public async Task<IActionResult> CompleteLesson([FromRoute] int lessonId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var lesson = await _context.Lessons.FindAsync(lessonId);
+            if (lesson == null) return NotFound("Lesson not found.");
+
+            var progress = await _context.UserLessonProgresses
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.LessonId == lessonId);
+
+            if (progress == null)
+            {
+                progress = new UserLessonProgress { UserId = userId, LessonId = lessonId, CourseId = lesson.CourseId, IsCompleted = true };
+                await _context.UserLessonProgresses.AddAsync(progress);
+            }
+            else
+            {
+                progress.IsCompleted = true;
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Lesson marked as completed." });
         }
 
         [HttpPost]
@@ -143,30 +160,29 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
 
             return Ok(lesson);
         }
-
-        [HttpDelete]
-        [Route("{courseID}/{lessonID}")]
-        public async Task<IActionResult> DeleteLesson([FromRoute] int courseID, [FromRoute] int lessonID)
+        [HttpDelete("{courseID}/{lessonID}")]
+        public async Task<IActionResult> DeleteLesson(int courseID, int lessonID)
         {
-            var course = await _context.Courses
-                   .Include(c => c.Lessons)
-                   .FirstOrDefaultAsync(c => c.Id == courseID);
-            if (course == null)
-            {
-                return NotFound();
-            }
-            var lesson = course.Lessons.FirstOrDefault(l => l.Id == lessonID);
+            var lesson = await _context.Lessons
+                .Include(l => l.UserLessonProgresses)
+                .FirstOrDefaultAsync(l => l.Id == lessonID && l.CourseId == courseID);
 
             if (lesson == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Lesson not found." });
             }
+
+            var userProgresses = _context.UserLessonProgresses.Where(ulp => ulp.LessonId == lessonID);
+            _context.UserLessonProgresses.RemoveRange(userProgresses);
+            await _context.SaveChangesAsync();
+
 
             _context.Lessons.Remove(lesson);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok(new { message = "Lesson deleted successfully." });
         }
+
 
         [HttpPut]
         [Route("{courseID}/{lessonID}")]
@@ -325,7 +341,7 @@ namespace Dev_Adventures_Backend.Controllers.LessonController
             video.Title = newVideo.Title;
             video.VideoURL = newVideo.VideoURL;
 
-            
+
 
             await _context.SaveChangesAsync();
 

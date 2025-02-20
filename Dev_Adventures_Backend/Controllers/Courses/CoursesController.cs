@@ -25,6 +25,35 @@ namespace Dev_Adventures_Backend.Controllers.Courses
             return userRole == "Admin";
         }
 
+        [HttpPost("{courseId}/complete")]
+        public async Task<IActionResult> CompleteCourse([FromRoute] int courseId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var course = await _context.Courses.Include(c => c.Lessons).FirstOrDefaultAsync(c => c.Id == courseId);
+            if (course == null) return NotFound("Course not found.");
+
+            var userLessons = await _context.UserLessonProgresses
+                .Where(lp => lp.UserId == userId && lp.CourseId == courseId && lp.IsCompleted)
+                .CountAsync();
+
+            if (userLessons != course.Lessons.Count)
+            {
+                return BadRequest("You must complete all lessons to finish the course.");
+            }
+
+            var certificate = new Certificate
+            {
+                UserId = userId,
+                CourseId = courseId,
+                IssuedDate = DateTime.UtcNow
+            };
+            _context.Certificates.Add(certificate);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Course completed! Certificate issued." });
+        }
+
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
