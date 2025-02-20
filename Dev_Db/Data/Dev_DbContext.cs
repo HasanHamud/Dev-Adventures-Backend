@@ -131,8 +131,43 @@ namespace Dev_Db.Data
                 .WithMany(c => c.UserCourses)
                 .HasForeignKey(uc => uc.CourseId);
 
+            modelBuilder.Entity<Certificate>()
+             .HasOne(c => c.User)
+             .WithMany()
+             .HasForeignKey(c => c.UserId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Certificate>()
+                .HasOne(c => c.Course)
+                .WithMany()
+                .HasForeignKey(c => c.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserLessonProgress>()
+                .HasOne(ulp => ulp.Lesson)
+                .WithMany(l => l.UserLessonProgresses)
+                .HasForeignKey(ulp => ulp.LessonId)
+                .OnDelete(DeleteBehavior.Cascade);
 
 
+            modelBuilder.Entity<UserLessonProgress>()
+                .HasOne(lp => lp.Course)
+                .WithMany()
+                .HasForeignKey(lp => lp.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+            modelBuilder.Entity<UserCourseProgress>()
+                .HasOne(ucp => ucp.User)
+                .WithMany()
+                .HasForeignKey(ucp => ucp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserCourseProgress>()
+                .HasOne(ucp => ucp.Course)
+                .WithMany()
+                .HasForeignKey(ucp => ucp.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
         public DbSet<Course> Courses { get; set; }
@@ -152,5 +187,9 @@ namespace Dev_Db.Data
         public DbSet<Coupon> Coupons { get; set; }
         public DbSet<UserCourse> UserCourses { get; set; }
         public DbSet<LearningOutcome> LearningOutcomes { get; set; }
+        public DbSet<UserLessonProgress> UserLessonProgresses { get; set; }
+        public DbSet<Certificate> Certificates { get; set; }
+        public DbSet<UserVideoProgress> UserVideoProgresses { get; set; }
+        public DbSet<UserCourseProgress> UserCourseProgresses { get; set; }
     }
 }

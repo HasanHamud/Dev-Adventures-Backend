@@ -7,8 +7,7 @@ namespace Dev_Models.Models
 {
     public class Course
     {
-
-
+        public readonly object UserLessonProgresses;
 
         public int Id { get; set; }
         public string Title { get; set; }

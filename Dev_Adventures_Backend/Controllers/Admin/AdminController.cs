@@ -1,4 +1,5 @@
-﻿using Dev_Models.DTOs.UserDTo;
+﻿using Dev_Db.Data;
+using Dev_Models.DTOs.UserDTo;
 using Dev_Models.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -14,12 +15,13 @@ public class AdminController : ControllerBase
     private readonly UserManager<User> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly ILogger<AdminController> _logger;
-
-    public AdminController(UserManager<User> userManager, RoleManager<IdentityRole> roleManager, ILogger<AdminController> logger)
+    private readonly Dev_DbContext _context;
+    public AdminController(UserManager<User> userManager, RoleManager<IdentityRole> roleManager, ILogger<AdminController> logger, Dev_DbContext context)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _logger = logger;
+        _context = context;
     }
 
     [HttpGet("users")]
@@ -46,6 +48,7 @@ public class AdminController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(string id)
     {
+        using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var user = await _userManager.FindByIdAsync(id);
@@ -54,17 +57,35 @@ public class AdminController : ControllerBase
                 return NotFound(new { message = $"User with ID '{id}' not found." });
             }
 
+            var userRoles = await _userManager.GetRolesAsync(user);
+            if (userRoles.Any())
+            {
+                await _userManager.RemoveFromRolesAsync(user, userRoles);
+            }
+
+            await _context.ChatMessages
+                .Where(m => m.SenderId == id || m.ReceiverId == id)
+                .ExecuteDeleteAsync();
+
             var result = await _userManager.DeleteAsync(user);
             if (!result.Succeeded)
             {
-                return BadRequest(new { message = "Failed to delete the user.", errors = result.Errors });
+                throw new Exception($"Failed to delete user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
 
+            await transaction.CommitAsync();
             return Ok(new { message = $"User with ID '{id}' deleted successfully." });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while deleting the user.", error = ex.Message });
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error deleting user {UserId}", id);
+            return StatusCode(500, new
+            {
+                message = "An error occurred while deleting the user.",
+                error = ex.Message,
+                details = ex.InnerException?.Message
+            });
         }
     }
 
