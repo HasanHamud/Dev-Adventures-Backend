@@ -1,6 +1,7 @@
 ﻿using Dev_Models.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Dev_Db.Data
 {
@@ -44,6 +45,7 @@ namespace Dev_Db.Data
                 .WithMany(c => c.LearningObjectives)
                 .HasForeignKey(o => o.CourseId);
 
+            // Quiz Relationships
             modelBuilder.Entity<Quiz>()
                 .HasOne(q => q.Lesson)
                 .WithOne(l => l.Quiz)
@@ -61,6 +63,7 @@ namespace Dev_Db.Data
                 .HasForeignKey(a => a.QuestionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // User Quiz Results
             modelBuilder.Entity<UserQuizResult>()
                 .HasOne(r => r.User)
                 .WithMany()
@@ -118,8 +121,9 @@ namespace Dev_Db.Data
                 entity.HasIndex(pc => new { pc.PlanId, pc.CourseId });
             });
 
+            // User-Course Relationship
             modelBuilder.Entity<UserCourse>()
-           .HasKey(uc => new { uc.UserId, uc.CourseId });
+                .HasKey(uc => new { uc.UserId, uc.CourseId });
 
             modelBuilder.Entity<UserCourse>()
                 .HasOne(uc => uc.User)
@@ -131,11 +135,25 @@ namespace Dev_Db.Data
                 .WithMany(c => c.UserCourses)
                 .HasForeignKey(uc => uc.CourseId);
 
+            // Fix decimal precision warnings
+            modelBuilder.Entity<UserCourse>()
+                .Property(e => e.Progress)
+                .HasPrecision(5, 2);
+
+            modelBuilder.Entity<Cart>()
+                .Property(e => e.totalPrice)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Plan>()
+                .Property(e => e.totalPrice)
+                .HasPrecision(18, 2);
+
+            // Certificate Relationships
             modelBuilder.Entity<Certificate>()
-             .HasOne(c => c.User)
-             .WithMany()
-             .HasForeignKey(c => c.UserId)
-             .OnDelete(DeleteBehavior.Cascade);
+                .HasOne(c => c.User)
+                .WithMany()
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Certificate>()
                 .HasOne(c => c.Course)
@@ -143,31 +161,45 @@ namespace Dev_Db.Data
                 .HasForeignKey(c => c.CourseId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<UserLessonProgress>()
-                .HasOne(ulp => ulp.Lesson)
-                .WithMany(l => l.UserLessonProgresses)
-                .HasForeignKey(ulp => ulp.LessonId)
-                .OnDelete(DeleteBehavior.Cascade);
+            // User Progress Configurations
+            modelBuilder.Entity<UserLessonProgress>(entity =>
+            {
+                entity.Property(e => e.CompletedVideos)
+                    .HasColumnName("CompletedVideos");
 
+                entity.HasOne(ulp => ulp.Lesson)
+                    .WithMany(l => l.UserLessonProgresses)
+                    .HasForeignKey(ulp => ulp.LessonId)
+                    .OnDelete(DeleteBehavior.NoAction); 
 
-            modelBuilder.Entity<UserLessonProgress>()
-                .HasOne(lp => lp.Course)
-                .WithMany()
-                .HasForeignKey(lp => lp.CourseId)
-                .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(lp => lp.Course)
+                    .WithMany()
+                    .HasForeignKey(lp => lp.CourseId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
+                entity.HasIndex(ulp => new { ulp.UserId, ulp.LessonId, ulp.CourseId });
+            });
 
-            modelBuilder.Entity<UserCourseProgress>()
-                .HasOne(ucp => ucp.User)
-                .WithMany()
-                .HasForeignKey(ucp => ucp.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<UserCourseProgress>(entity =>
+            {
+                entity.HasOne(ucp => ucp.User)
+                    .WithMany()
+                    .HasForeignKey(ucp => ucp.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<UserCourseProgress>()
-                .HasOne(ucp => ucp.Course)
-                .WithMany()
-                .HasForeignKey(ucp => ucp.CourseId)
-                .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(ucp => ucp.Course)
+                    .WithMany()
+                    .HasForeignKey(ucp => ucp.CourseId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(ucp => new { ucp.UserId, ucp.CourseId });
+            });
+
+            // Video Progress Configuration
+            modelBuilder.Entity<UserVideoProgress>(entity =>
+            {
+                entity.HasIndex(uvp => new { uvp.UserId, uvp.VideoId });
+            });
         }
 
         public DbSet<Course> Courses { get; set; }
